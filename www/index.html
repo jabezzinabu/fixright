@@ -1455,14 +1455,12 @@
             <div id="vizDescHint" style="display:none;font-size:0.76rem;color:var(--muted);margin-top:0.35rem;">💡 Concept loaded — add notes for specific tweaks, or leave blank to let the AI interpret.</div>
           </div>
 
-          <div id="openaiKeyRow" style="background:rgba(200,150,42,0.06);border:1px solid rgba(200,150,42,0.25);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <span style="font-size:1rem;">🔑</span>
-            <div style="flex:1;min-width:180px;">
-              <input type="password" id="openaiKeyInput" placeholder="OpenAI API key (sk-...)"
-                style="width:100%;font-family:monospace;font-size:0.82rem;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;outline:none;"
-                oninput="saveOpenAIKey(this.value)">
-            </div>
-            <span style="font-size:0.72rem;color:var(--muted);">Required · <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--rust)">Get key</a></span>
+          <!-- Admin-only OpenAI key override -->
+          <div id="openaiKeyRow" style="display:none;background:rgba(200,150,42,0.06);border:1px solid rgba(200,150,42,0.25);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;">
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.4rem;">👑 Admin: Override OpenAI key</div>
+            <input type="password" id="openaiKeyInput" placeholder="sk-... (leave blank to use server key)"
+              style="width:100%;font-family:monospace;font-size:0.82rem;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;outline:none;"
+              oninput="saveOpenAIKey(this.value)">
           </div>
 
           <div class="viz-nav-row">
@@ -2245,6 +2243,9 @@ function grantSuperAdmin() {
   // Show admin + discover tabs
   document.getElementById('tabAdmin').style.display = 'flex';
   document.getElementById('tabDiscover').style.display = 'flex';
+  // Show OpenAI key override for admin
+  const kr = document.getElementById('openaiKeyRow');
+  if (kr) kr.style.display = 'block';
   // Show admin badge on avatar
   document.getElementById('userAvatar').style.background = 'linear-gradient(135deg, var(--gold), #e8a820)';
   document.getElementById('userAvatar').style.color = 'var(--navy)';
@@ -2524,7 +2525,7 @@ async function runVisualize() {
 
   if (!vizPhotoBase64) { showToast('Please upload your space photo first'); return; }
   if (!desc && !vizConceptItem) { showToast('Please describe what you want, or pick a concept from Discover'); return; }
-  if (!getOpenAIKey()) { showToast('Please enter your OpenAI API key above'); document.getElementById('openaiKeyInput')?.focus(); return; }
+
 
   setVizLoading(true);
   document.getElementById('vizResult').classList.remove('visible');
@@ -2576,18 +2577,15 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     setVizProgress(50);
 
     setVizProgress(70);
-    // Call OpenAI directly — gpt-image-1 supports browser CORS
-    const oKey = await getOpenAIKey();
-    const fd2 = new FormData();
-    fd2.append('model', 'gpt-image-1');
-    fd2.append('prompt', editPrompt);
-    fd2.append('n', '1');
-    fd2.append('size', '1024x1024');
-    fd2.append('image', new File([vizPhotoBlob], 'photo.jpg', { type: 'image/jpeg' }));
-    const imgResp = await fetch('https://api.openai.com/v1/images/edits', {
+    // Route through server proxy — key stays hidden
+    const imgResp = await fetch('/api/openai-image', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${oKey}` },
-      body: fd2
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: editPrompt,
+        imageBase64: vizPhotoBase64,
+        size: '1024x1024'
+      })
     });
 
     const imgData = await imgResp.json();
