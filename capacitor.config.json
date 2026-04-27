@@ -1,0 +1,26 @@
+{
+  "appId": "com.fixright.app",
+  "appName": "FixRight",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "popover"
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#1c2b3a"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#f5f0e8"
+  },
+  "ios": {
+    "backgroundColor": "#f5f0e8",
+    "contentInset": "always",
+    "preferredContentMode": "mobile"
+  }
+}

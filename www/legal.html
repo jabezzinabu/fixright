@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Legal — FixRight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f5f0e8; --navy: #1c2b3a; --navy-light: #2e4259;
+    --rust: #b5451b; --gold: #c8962a; --paper: #faf7f0;
+    --ink: #1c2b3a; --muted: #7a8a95; --border: #d8cebf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+  header {
+    background: var(--navy); padding: 0 2rem; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #f5f0e8; display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+  .logo-mark { width: 26px; height: 26px; background: var(--rust); clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); }
+  .back-link { color: rgba(255,255,255,0.65); font-size: 0.88rem; text-decoration: none; transition: color 0.2s; }
+  .back-link:hover { color: white; }
+
+  .tabs { background: var(--paper); border-bottom: 1px solid var(--border); display: flex; gap: 0; position: sticky; top: 64px; z-index: 9; }
+  .tab {
+    padding: 1rem 1.5rem; font-size: 0.88rem; font-weight: 500;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    color: var(--muted); transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .tab:hover { color: var(--navy); }
+  .tab.active { color: var(--rust); border-bottom-color: var(--rust); }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .doc { display: none; }
+  .doc.active { display: block; }
+
+  .doc-header { margin-bottom: 2.5rem; }
+  .doc-header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--navy); margin-bottom: 0.5rem; }
+  .doc-meta { font-size: 0.82rem; color: var(--muted); }
+
+  h2 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--navy); margin: 2rem 0 0.75rem; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: var(--navy); margin: 1.25rem 0 0.5rem; }
+  p { font-size: 0.95rem; line-height: 1.75; color: #3a4a56; margin-bottom: 0.85rem; }
+  ul { padding-left: 1.5rem; margin-bottom: 0.85rem; }
+  ul li { font-size: 0.95rem; line-height: 1.75; color: #3a4a56; margin-bottom: 0.25rem; }
+  a { color: var(--rust); }
+  .highlight-box {
+    background: rgba(181,69,27,0.05); border-left: 3px solid var(--rust);
+    border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.5rem 0;
+    font-size: 0.9rem; line-height: 1.65; color: #5a3020;
+  }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  .contact-box {
+    background: var(--navy); color: white; border-radius: 12px;
+    padding: 1.5rem; margin-top: 2.5rem;
+  }
+  .contact-box h3 { color: var(--gold); margin-top: 0; }
+  .contact-box p { color: rgba(255,255,255,0.75); margin-bottom: 0.4rem; }
+  .contact-box a { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">
+    <div class="logo-mark"></div>
+    FixRight
+  </a>
+  <a class="back-link" href="index.html">← Back to app</a>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showDoc('terms')">Terms &amp; Conditions</button>
+  <button class="tab" onclick="showDoc('privacy')">Privacy Policy</button>
+  <button class="tab" onclick="showDoc('dns')">Do Not Sell My Data</button>
+</div>
+
+<div class="container">
+
+  <!-- TERMS & CONDITIONS -->
+  <div class="doc active" id="doc-terms">
+    <div class="doc-header">
+      <h1>Terms &amp; Conditions</h1>
+      <p class="doc-meta">Last updated: April 23, 2025 · Effective: April 23, 2025</p>
+    </div>
+
+    <div class="highlight-box">
+      Please read these Terms carefully before using FixRight. By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
+    </div>
+
+    <h2>1. About FixRight</h2>
+    <p>FixRight ("we", "us", or "our") is an AI-powered home repair and renovation estimating tool operated by FixRight Inc. The Service provides planning estimates for home improvement projects based on information and images you submit.</p>
+
+    <h2>2. Estimates Are for Planning Purposes Only</h2>
+    <p>All cost estimates, materials lists, timelines, and recommendations provided by FixRight are <strong>planning estimates only</strong> and do not constitute professional contractor quotes, engineering assessments, or guarantees of project cost.</p>
+    <ul>
+      <li>Actual costs may vary significantly based on your location, contractor rates, material prices, and site conditions.</li>
+      <li>FixRight estimates should not be used as the sole basis for budgeting, financing, or contracting decisions.</li>
+      <li>Always obtain multiple professional quotes before commencing any home improvement work.</li>
+      <li>FixRight is not responsible for any financial loss arising from reliance on estimates provided.</li>
+    </ul>
+
+    <h2>3. User Accounts</h2>
+    <p>To access certain features you may need to create an account. You are responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account. You must provide accurate information and promptly update it if it changes. You must be at least 18 years old to create an account.</p>
+
+    <h2>4. Acceptable Use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Use the Service for any unlawful purpose or in violation of any regulations</li>
+      <li>Submit content that is defamatory, fraudulent, or infringes third-party rights</li>
+      <li>Attempt to reverse-engineer, scrape, or copy the Service's AI models or outputs at scale</li>
+      <li>Use automated tools to access the Service without our express written permission</li>
+      <li>Resell or commercialise estimates without prior agreement</li>
+    </ul>
+
+    <h2>5. Intellectual Property</h2>
+    <p>FixRight and its underlying technology, branding, and content are owned by FixRight Inc. and protected by applicable intellectual property laws. Estimates generated for your personal use are yours to use freely. You retain ownership of photos you upload; by uploading them you grant FixRight a limited licence to process them solely to deliver the Service.</p>
+
+    <h2>6. Subscription and Payments</h2>
+    <p>Certain features require a paid subscription. All fees are in USD unless otherwise stated. Subscriptions renew automatically unless cancelled before the renewal date. Refunds are provided at our discretion and in accordance with applicable consumer protection law. We reserve the right to change pricing with 30 days' notice.</p>
+
+    <h2>7. Disclaimer of Warranties</h2>
+    <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR THAT ESTIMATES WILL BE ACCURATE.</p>
+
+    <h2>8. Limitation of Liability</h2>
+    <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, FIXRIGHT INC. SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES ARISING FROM YOUR USE OF THE SERVICE.</p>
+
+    <h2>9. Indemnification</h2>
+    <p>You agree to indemnify and hold harmless FixRight Inc. and its officers, directors, employees, and agents from any claims, damages, or expenses (including reasonable attorneys' fees) arising from your use of the Service or violation of these Terms.</p>
+
+    <h2>10. Termination</h2>
+    <p>We may suspend or terminate your access to the Service at any time, with or without cause, with or without notice. Upon termination, your right to use the Service ceases immediately. Provisions that by their nature should survive termination will do so.</p>
+
+    <h2>11. Governing Law</h2>
+    <p>These Terms are governed by the laws of the State of Delaware, United States, without regard to conflict of law principles. Any disputes shall be resolved in the courts of Delaware, and you consent to personal jurisdiction therein.</p>
+
+    <h2>12. Changes to These Terms</h2>
+    <p>We may update these Terms from time to time. We will notify you of material changes by email or prominent notice in the app. Continued use after changes take effect constitutes acceptance of the revised Terms.</p>
+
+    <h2>13. Contact</h2>
+    <div class="contact-box">
+      <h3>Questions about these Terms?</h3>
+      <p>Email: <a href="mailto:legal@fixright.app">legal@fixright.app</a></p>
+      <p>FixRight Inc., 1234 Main Street, Wilmington, DE 19801, United States</p>
+    </div>
+  </div>
+
+  <!-- PRIVACY POLICY -->
+  <div class="doc" id="doc-privacy">
+    <div class="doc-header">
+      <h1>Privacy Policy</h1>
+      <p class="doc-meta">Last updated: April 23, 2025 · Effective: April 23, 2025</p>
+    </div>
+
+    <div class="highlight-box">
+      Your privacy matters. This policy explains what data we collect, how we use it, and your rights. We do not sell your personal data to third parties for advertising.
+    </div>
+
+    <h2>1. Who We Are</h2>
+    <p>FixRight Inc. operates the FixRight home repair estimating app. This Privacy Policy applies to data collected through our web app, mobile apps, and related services. For questions, contact <a href="mailto:privacy@fixright.app">privacy@fixright.app</a>.</p>
+
+    <h2>2. Data We Collect</h2>
+
+    <h3>Data you provide directly</h3>
+    <ul>
+      <li><strong>Account information:</strong> Name, email address, and password (or OAuth token) when you sign up</li>
+      <li><strong>Project data:</strong> Photos you upload, project descriptions, and the estimates we generate</li>
+      <li><strong>Payment information:</strong> Billing details processed by our payment provider (Stripe). We do not store full card numbers.</li>
+      <li><strong>Communications:</strong> Messages you send to our support team</li>
+    </ul>
+
+    <h3>Data collected automatically</h3>
+    <ul>
+      <li><strong>Usage data:</strong> Pages visited, features used, estimate types generated</li>
+      <li><strong>Device data:</strong> Browser type, operating system, device type, IP address</li>
+      <li><strong>Cookies and local storage:</strong> Session management, preferences, anonymous user identifiers</li>
+    </ul>
+
+    <h2>3. How We Use Your Data</h2>
+    <ul>
+      <li>To provide and improve the FixRight estimating service</li>
+      <li>To process your photos through AI models to generate project estimates</li>
+      <li>To save and sync your estimate history across devices</li>
+      <li>To process payments and manage your subscription</li>
+      <li>To send service-related communications (receipts, security alerts)</li>
+      <li>To send marketing emails if you opt in (you can unsubscribe at any time)</li>
+      <li>To improve our AI models using aggregated, anonymised estimate data</li>
+      <li>To comply with legal obligations</li>
+    </ul>
+
+    <h2>4. AI Processing of Your Photos</h2>
+    <p>Photos you upload are sent to Anthropic's Claude API and, for Pro users, image generation APIs to process your estimate or create design visualisations. Photos are transmitted securely and are not stored by Anthropic beyond their processing window. We retain your photos in our database only if you save the estimate; you can delete saved estimates at any time.</p>
+
+    <h2>5. Data Sharing</h2>
+    <p>We do not sell your personal data. We share data only with:</p>
+    <ul>
+      <li><strong>Anthropic:</strong> For AI processing of your project descriptions and photos</li>
+      <li><strong>Supabase:</strong> Our database and authentication provider</li>
+      <li><strong>Stripe:</strong> For payment processing</li>
+      <li><strong>Analytics providers:</strong> Aggregated, anonymised usage data only</li>
+      <li><strong>Legal authorities:</strong> When required by law or to protect rights and safety</li>
+    </ul>
+
+    <h2>6. Data Retention</h2>
+    <p>We retain your account data for as long as your account is active. Saved estimates are retained until you delete them or close your account. Anonymised usage statistics may be retained indefinitely for product improvement.</p>
+
+    <h2>7. Your Rights</h2>
+    <p>Depending on your location, you may have the right to:</p>
+    <ul>
+      <li>Access the personal data we hold about you</li>
+      <li>Correct inaccurate data</li>
+      <li>Delete your account and associated data</li>
+      <li>Export your data in a portable format</li>
+      <li>Object to or restrict certain processing</li>
+      <li>Opt out of marketing communications</li>
+    </ul>
+    <p>To exercise any of these rights, email <a href="mailto:privacy@fixright.app">privacy@fixright.app</a>. We will respond within 30 days.</p>
+
+    <h2>8. California Privacy Rights (CCPA/CPRA)</h2>
+    <p>California residents have additional rights under the California Consumer Privacy Act. You have the right to know what personal information we collect, the right to delete it, the right to opt out of sale or sharing (we do not sell your data), and the right to non-discrimination for exercising your rights. See our <a href="#" onclick="showDoc('dns'); return false;">Do Not Sell or Share</a> page for more.</p>
+
+    <h2>9. International Users</h2>
+    <p>FixRight is operated from the United States. If you are located in the EU, UK, or Canada, your data is transferred to the US under appropriate safeguards (Standard Contractual Clauses where applicable). EU/UK residents have rights under GDPR, including the right to lodge a complaint with your supervisory authority.</p>
+
+    <h2>10. Children's Privacy</h2>
+    <p>FixRight is not directed at children under 13. We do not knowingly collect personal data from children. If you believe a child has provided data to us, contact us immediately and we will delete it.</p>
+
+    <h2>11. Security</h2>
+    <p>We use industry-standard security measures including TLS encryption in transit, encrypted storage, and access controls. No system is 100% secure; if you become aware of a security issue, please contact <a href="mailto:security@fixright.app">security@fixright.app</a>.</p>
+
+    <h2>12. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy periodically. We will notify you of material changes by email or in-app notice. Continued use of the Service after changes constitutes acceptance.</p>
+
+    <div class="contact-box">
+      <h3>Privacy enquiries</h3>
+      <p>Email: <a href="mailto:privacy@fixright.app">privacy@fixright.app</a></p>
+      <p>FixRight Inc., 1234 Main Street, Wilmington, DE 19801, United States</p>
+    </div>
+  </div>
+
+  <!-- DO NOT SELL -->
+  <div class="doc" id="doc-dns">
+    <div class="doc-header">
+      <h1>Do Not Sell or Share My Personal Information</h1>
+      <p class="doc-meta">Last updated: April 23, 2025 · California CCPA/CPRA &amp; Global Privacy Rights</p>
+    </div>
+
+    <div class="highlight-box">
+      FixRight does not sell your personal information to third parties. We do not share your personal data with advertisers or data brokers.
+    </div>
+
+    <h2>Our Commitment</h2>
+    <p>FixRight Inc. does not sell, rent, or trade your personal information to any third party for monetary or other valuable consideration. We do not share your data with advertisers for targeted advertising.</p>
+
+    <h2>What "Sale" and "Sharing" Mean Under California Law</h2>
+    <p>Under the California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA), "sale" means transferring personal information for monetary or other valuable consideration. "Sharing" includes disclosing personal information for cross-context behavioural advertising. FixRight does neither.</p>
+
+    <h2>Data We Do Share — and Why</h2>
+    <p>We share limited data only with service providers who process it on our behalf to operate the app:</p>
+    <ul>
+      <li><strong>Anthropic</strong> — processes your project photos and descriptions to generate AI estimates. This is a service provider relationship, not a sale.</li>
+      <li><strong>Supabase</strong> — hosts your account data and estimate history. This is a service provider relationship.</li>
+      <li><strong>Stripe</strong> — processes payments. This is a service provider relationship.</li>
+    </ul>
+    <p>These providers are contractually prohibited from using your data for any purpose other than providing services to FixRight.</p>
+
+    <h2>Your Rights</h2>
+    <p>Regardless of where you live, you can:</p>
+    <ul>
+      <li>Request a copy of the personal data we hold about you</li>
+      <li>Request deletion of your personal data and account</li>
+      <li>Request correction of inaccurate data</li>
+      <li>Withdraw consent for marketing communications at any time</li>
+    </ul>
+    <p>California residents additionally have the right to opt out of sale and sharing (which we do not engage in), and the right to limit use of sensitive personal information.</p>
+
+    <h2>How to Submit a Request</h2>
+    <p>To exercise any privacy right:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:privacy@fixright.app">privacy@fixright.app</a> with subject line "Privacy Request"</li>
+      <li><strong>In-app:</strong> Go to Settings → Account → Delete My Data</li>
+    </ul>
+    <p>We will verify your identity and respond within 45 days. For California residents we will not discriminate against you for exercising these rights.</p>
+
+    <h2>Authorised Agent</h2>
+    <p>California residents may designate an authorised agent to submit requests on their behalf. We may require written authorisation and verification of the agent's identity.</p>
+
+    <h2>Contact Our Privacy Team</h2>
+    <div class="contact-box">
+      <h3>Privacy requests &amp; questions</h3>
+      <p>Email: <a href="mailto:privacy@fixright.app">privacy@fixright.app</a></p>
+      <p>Subject line: "Privacy Request — [Your Name]"</p>
+      <p>FixRight Inc., 1234 Main Street, Wilmington, DE 19801, United States</p>
+      <p style="margin-top:0.75rem;font-size:0.8rem;color:rgba(255,255,255,0.45)">We respond within 45 days. No sale of data. No exceptions.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showDoc(id) {
+  document.querySelectorAll('.doc').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('doc-' + id).classList.add('active');
+  const tabs = { terms: 0, privacy: 1, dns: 2 };
+  document.querySelectorAll('.tab')[tabs[id]].classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

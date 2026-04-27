@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixRight — Design Visualization Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#f5f0e8;--navy:#1c2b3a;--navy-light:#2e4259;--rust:#b5451b;
+    --rust-light:#d4622e;--gold:#c8962a;--sage:#4a6741;--paper:#faf7f0;
+    --ink:#1c2b3a;--muted:#7a8a95;--border:#d8cebf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;}
+  header{background:var(--navy);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.2);position:sticky;top:0;z-index:10;}
+  .logo{font-family:'Playfair Display',serif;font-size:1.4rem;color:#f5f0e8;display:flex;align-items:center;gap:.5rem;}
+  .logo-mark{width:26px;height:26px;background:var(--rust);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);}
+  .hbadge{background:var(--gold);color:var(--navy);font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:99px;}
+  .back{color:rgba(255,255,255,.6);font-size:.85rem;text-decoration:none;}
+  .back:hover{color:#fff;}
+  .wrap{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+  h1{font-family:'Playfair Display',serif;font-size:1.75rem;color:var(--navy);margin-bottom:.3rem;}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:2rem;}
+
+  /* INPUT */
+  .input-panel{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:2rem;box-shadow:0 2px 12px rgba(28,43,58,.07);}
+  .panel-label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:1rem;}
+  .input-grid{display:grid;grid-template-columns:120px 1fr;gap:1.25rem;align-items:start;}
+  @media(max-width:600px){.input-grid{grid-template-columns:1fr;}}
+  .photo-drop{width:120px;height:120px;border:2px dashed var(--border);border-radius:10px;background:var(--cream);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;transition:border-color .2s;flex-shrink:0;}
+  .photo-drop:hover{border-color:var(--rust);}
+  .photo-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .photo-drop img{width:100%;height:100%;object-fit:cover;display:none;}
+  .ph-ico{font-size:1.5rem;}
+  .ph-lbl{font-size:.7rem;color:var(--muted);margin-top:4px;text-align:center;}
+  .fields{display:flex;flex-direction:column;gap:.85rem;}
+  label{font-size:.82rem;font-weight:600;color:var(--navy);display:block;margin-bottom:.3rem;}
+  textarea,input[type=password]{width:100%;font-family:'DM Sans',sans-serif;font-size:.9rem;padding:.65rem .85rem;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:var(--ink);outline:none;transition:border-color .2s;}
+  textarea:focus,input:focus{border-color:var(--rust);box-shadow:0 0 0 3px rgba(181,69,27,.07);}
+  textarea{resize:vertical;min-height:75px;}
+  .keys-row{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+  @media(max-width:600px){.keys-row{grid-template-columns:1fr;}}
+  .key-hint{font-size:.73rem;color:var(--muted);margin-top:3px;}
+  .key-hint a{color:var(--rust);}
+
+  /* GRID */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;}
+  @media(max-width:720px){.grid{grid-template-columns:1fr;}}
+
+  .card{background:var(--paper);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(28,43,58,.07);transition:box-shadow .2s;}
+  .card:hover{box-shadow:0 4px 24px rgba(28,43,58,.12);}
+  .card.featured{border-color:var(--gold);box-shadow:0 2px 20px rgba(200,150,42,.15);}
+
+  .card-head{padding:.85rem 1.1rem;background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+  .card-head.featured-head{background:linear-gradient(135deg,#1c2b3a 0%,#2a3e28 100%);}
+  .card-title{font-family:'Playfair Display',serif;font-size:.95rem;color:#fff;}
+  .pills{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .pill{font-size:.67rem;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);white-space:nowrap;}
+  .pill.gold{background:rgba(200,150,42,.3);color:var(--gold);}
+  .pill.sage{background:rgba(74,103,65,.4);color:#8fcf82;}
+
+  .card-body{padding:1rem 1.1rem;flex:1;display:flex;flex-direction:column;gap:.85rem;}
+  .card-desc{font-size:.8rem;color:var(--muted);line-height:1.55;}
+
+  .frame{background:var(--cream);border:1px solid var(--border);border-radius:10px;min-height:240px;flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  .frame.tall{min-height:300px;}
+  .placeholder{text-align:center;color:var(--muted);font-size:.82rem;padding:1.5rem;line-height:1.55;}
+  .placeholder .ico{font-size:2rem;margin-bottom:.5rem;display:block;}
+  .pbar{position:absolute;bottom:0;left:0;height:3px;background:var(--rust);width:0;border-radius:0 3px 3px 0;}
+
+  .btn-run{width:100%;background:var(--rust);color:#fff;border:none;border-radius:9px;padding:.7rem;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:background .2s,transform .15s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+  .btn-run:hover:not(:disabled){background:var(--rust-light);transform:translateY(-1px);}
+  .btn-run:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+  .btn-run.on{background:var(--navy-light);}
+
+  .status{font-size:.75rem;color:var(--muted);text-align:center;font-style:italic;min-height:1.1em;}
+
+  .ratings{display:flex;gap:.4rem;}
+  .rbtn{flex:1;padding:.45rem .4rem;border-radius:7px;border:1.5px solid var(--border);background:#fff;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;text-align:center;}
+  .rbtn:hover{border-color:var(--rust);}
+  .rbtn.sel{border-color:var(--sage);background:rgba(74,103,65,.07);color:var(--sage);font-weight:600;}
+
+  .err-box{background:rgba(181,69,27,.07);border:1px solid rgba(181,69,27,.2);border-radius:8px;padding:.75rem 1rem;font-size:.81rem;color:#8b2a10;line-height:1.5;}
+  .err-box a{color:var(--rust);}
+
+  .verdict{background:var(--navy);border-radius:14px;padding:1.5rem 2rem;color:#fff;margin-top:1.5rem;display:none;}
+  .verdict.on{display:block;}
+  .verdict h3{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:.4rem;}
+  .verdict p{font-size:.87rem;color:rgba(255,255,255,.7);line-height:1.6;}
+
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-mark"></div>FixRight<span class="hbadge">DESIGN TEST</span></div>
+  <a class="back" href="index.html">← Back to app</a>
+</header>
+
+<div class="wrap">
+  <h1>Design Visualization Test</h1>
+  <p class="sub">Upload a photo, describe the project, then run each option individually to compare UX and visual quality.</p>
+
+  <div class="input-panel">
+    <div class="panel-label">Project Input</div>
+    <div class="input-grid">
+      <div class="photo-drop" id="photoDrop" onclick="document.getElementById('photoIn').click()">
+        <input type="file" id="photoIn" accept="image/*" onchange="handlePhoto(this.files[0])">
+        <img id="photoThumb" alt="">
+        <span class="ph-ico" id="phIco">📷</span>
+        <span class="ph-lbl" id="phLbl">Upload photo</span>
+      </div>
+      <div class="fields">
+        <div>
+          <label>Project description</label>
+          <textarea id="desc" placeholder="e.g. Add a stone patio with built-in planters, string lights overhead, and a fire pit in the centre..."></textarea>
+        </div>
+        <div class="keys-row">
+          <div>
+            <label>Anthropic API Key</label>
+            <input type="password" id="anthropicKey" placeholder="sk-ant-...">
+            <div class="key-hint">Options A, B, C — <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+          </div>
+          <div>
+            <label>OpenAI API Key</label>
+            <input type="password" id="openaiKey" placeholder="sk-...">
+            <div class="key-hint">Option D (photorealistic) — <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- A: Visual Concept -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">A — Visual Concept</span>
+        <div class="pills"><span class="pill">Anthropic only</span></div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Claude generates a styled design concept card — materials, colours, layout — showing the finished project as an architectural-style render.</p>
+        <div class="frame" id="fA"><div class="placeholder" id="phA"><span class="ico">🎨</span>Visual concept will appear here</div><div class="pbar" id="bA"></div></div>
+        <div class="status" id="sA"></div>
+        <button class="btn-run" id="btnA" onclick="runA()">▶ Run Option A</button>
+        <div class="ratings">
+          <button class="rbtn" onclick="rate('A','👍 Love it')">👍 Love it</button>
+          <button class="rbtn" onclick="rate('A','👌 Ok')">👌 Ok</button>
+          <button class="rbtn" onclick="rate('A','👎 No')">👎 No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- B: Annotations -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">B — Smart Annotations</span>
+        <div class="pills"><span class="pill sage">No extra cost</span><span class="pill">Anthropic only</span></div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Claude analyses the uploaded photo and draws labeled zones, material callouts, and dimension guides directly onto the image.</p>
+        <div class="frame tall" id="fB"><div class="placeholder" id="phB"><span class="ico">🏷</span>Annotated photo will appear here</div><div class="pbar" id="bB"></div></div>
+        <div class="status" id="sB"></div>
+        <button class="btn-run" id="btnB" onclick="runB()">▶ Run Option B</button>
+        <div class="ratings">
+          <button class="rbtn" onclick="rate('B','👍 Love it')">👍 Love it</button>
+          <button class="rbtn" onclick="rate('B','👌 Ok')">👌 Ok</button>
+          <button class="rbtn" onclick="rate('B','👎 No')">👎 No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- C: Before/After -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">C — Before / After</span>
+        <div class="pills"><span class="pill">Anthropic only</span></div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Your original photo alongside a styled "after" concept — a clear split-screen comparison that's easy to share with family or contractors.</p>
+        <div class="frame tall" id="fC"><div class="placeholder" id="phC"><span class="ico">↔</span>Before / after will appear here</div><div class="pbar" id="bC"></div></div>
+        <div class="status" id="sC"></div>
+        <button class="btn-run" id="btnC" onclick="runC()">▶ Run Option C</button>
+        <div class="ratings">
+          <button class="rbtn" onclick="rate('C','👍 Love it')">👍 Love it</button>
+          <button class="rbtn" onclick="rate('C','👌 Ok')">👌 Ok</button>
+          <button class="rbtn" onclick="rate('C','👎 No')">👎 No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- D: Photorealistic Overlay -->
+    <div class="card featured">
+      <div class="card-head featured-head">
+        <span class="card-title">D — Photorealistic Overlay ✨</span>
+        <div class="pills"><span class="pill gold">Premium</span><span class="pill">OpenAI key</span></div>
+      </div>
+      <div class="card-body">
+        <p class="card-desc">Uses GPT image editing (gpt-image-1) to apply the renovation directly onto your uploaded photo — the finished project rendered into your actual space.</p>
+        <div class="frame tall" id="fD"><div class="placeholder" id="phD"><span class="ico">✨</span>Photorealistic render will appear here<br><span style="font-size:.74rem;display:block;margin-top:4px;">Requires OpenAI API key</span></div><div class="pbar" id="bD"></div></div>
+        <div class="status" id="sD"></div>
+        <button class="btn-run" id="btnD" onclick="runD()">▶ Run Option D</button>
+        <div class="ratings">
+          <button class="rbtn" onclick="rate('D','👍 Love it')">👍 Love it</button>
+          <button class="rbtn" onclick="rate('D','👌 Ok')">👌 Ok</button>
+          <button class="rbtn" onclick="rate('D','👎 No')">👎 No</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="verdict" id="verdict">
+    <h3>Your Ratings</h3>
+    <p id="verdictText"></p>
+  </div>
+</div>
+
+<script>
+let b64 = null, dataUrl = null, imgBlob = null, ratings = {};
+
+window.addEventListener('load', () => {
+  const ak = localStorage.getItem('fixright_apikey');
+  const ok = localStorage.getItem('fixright_openai');
+  if (ak) document.getElementById('anthropicKey').value = ak;
+  if (ok) document.getElementById('openaiKey').value = ok;
+});
+
+function handlePhoto(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      const MAX = 1024;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) { const s = MAX/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      dataUrl = c.toDataURL('image/jpeg',.88);
+      b64 = dataUrl.split(',')[1];
+      c.toBlob(bl => imgBlob=bl,'image/jpeg',.88);
+      const t = document.getElementById('photoThumb');
+      t.src=dataUrl; t.style.display='block';
+      document.getElementById('phIco').style.display='none';
+      document.getElementById('phLbl').style.display='none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveKeys() {
+  const ak = document.getElementById('anthropicKey').value.trim();
+  const ok = document.getElementById('openaiKey').value.trim();
+  if (ak) localStorage.setItem('fixright_apikey',ak);
+  if (ok) localStorage.setItem('fixright_openai',ok);
+}
+
+function check(needOpenAI) {
+  if (!b64) { alert('Upload a photo first'); return false; }
+  if (!document.getElementById('desc').value.trim()) { alert('Add a project description'); return false; }
+  if (!needOpenAI && !document.getElementById('anthropicKey').value.trim()) { alert('Enter your Anthropic API key'); return false; }
+  if (needOpenAI && !document.getElementById('openaiKey').value.trim()) { alert('Option D needs your OpenAI API key'); return false; }
+  saveKeys();
+  return true;
+}
+
+async function claude(messages, maxT=2000) {
+  const ak = document.getElementById('anthropicKey').value.trim();
+  const r = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxT,messages})
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error?.message||'API error');
+  return d.content.map(b=>b.text||'').join('');
+}
+
+function photoMsg(text) {
+  return [{role:'user',content:[
+    {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+    {type:'text',text}
+  ]}];
+}
+
+// ── OPTION A ──────────────────────────────────────────────────────────────────
+async function runA() {
+  if (!check(false)) return;
+  go('A',true,'Generating concept...');
+  try {
+    const html = await claude(photoMsg(
+      `Analyse this photo and create a rich HTML/CSS design concept card for this project: ${document.getElementById('desc').value.trim()}
+
+Return ONLY a self-contained HTML snippet (no doctype/html/body). Include:
+- A hero illustration using CSS shapes, gradients, and colors representing the finished space from the same angle
+- A "Finished Look" heading with 3-4 key design decisions
+- Material/color swatches for the main materials
+Use inline styles. Width: 100%. Return ONLY the HTML.`
+    ));
+    const f=document.getElementById('fA');
+    f.style.cssText='flex-direction:column;align-items:stretch;padding:0;min-height:auto;';
+    f.innerHTML=html.replace(/```html|```/g,'').trim();
+    go('A',false);
+  } catch(e){go('A',false);err('A',e.message);}
+}
+
+// ── OPTION B ──────────────────────────────────────────────────────────────────
+async function runB() {
+  if (!check(false)) return;
+  go('B',true,'Analysing photo...');
+  try {
+    const raw = await claude(photoMsg(
+      `Analyse this photo and project: ${document.getElementById('desc').value.trim()}
+
+Return ONLY a JSON array of annotation zones — no markdown, no explanation:
+[{"label":"Short label","detail":"One sentence","x":0.1,"y":0.2,"w":0.4,"h":0.3,"color":"#b5451b"}]
+
+x,y,w,h are 0-1 fractions. 3-6 zones. Colors: #b5451b #c8962a #4a6741 #1c2b3a
+Return ONLY the JSON array.`
+    ),1200);
+    drawAnnotations(JSON.parse(raw.replace(/```json|```/g,'').trim()));
+    go('B',false);
+  } catch(e){go('B',false);err('B',e.message);}
+}
+
+function drawAnnotations(zones) {
+  const f=document.getElementById('fB');
+  document.getElementById('phB').style.display='none';
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    c.width=img.width; c.height=img.height;
+    const ctx=c.getContext('2d');
+    ctx.drawImage(img,0,0);
+    const fs=Math.max(14,img.width*.022);
+    zones.forEach((z,i)=>{
+      const x=z.x*img.width,y=z.y*img.height,w=z.w*img.width,h=z.h*img.height,col=z.color||'#b5451b';
+      ctx.fillStyle=col+'22'; ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle=col; ctx.lineWidth=Math.max(2,img.width*.003);
+      ctx.setLineDash([8,4]); ctx.strokeRect(x,y,w,h); ctx.setLineDash([]);
+      ctx.font=`600 ${fs}px DM Sans,sans-serif`;
+      const lw=ctx.measureText(z.label).width+fs,lh=fs*1.65;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.roundRect(x+4,y+4,lw,lh,4); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillText(z.label,x+4+fs*.35,y+4+lh*.68);
+      const br=fs*.72,bx=x+w-br-5,by=y+4+br;
+      ctx.fillStyle=col; ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.font=`700 ${fs*.75}px DM Sans,sans-serif`;
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(i+1,bx,by);
+      ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    });
+    c.style.cssText='width:100%;height:auto;border-radius:8px;display:block;';
+    const leg=document.createElement('div');
+    leg.style.cssText='padding:8px 10px;display:flex;flex-direction:column;gap:5px;width:100%;';
+    zones.forEach((z,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:flex-start;gap:7px;font-size:.78rem;';
+      row.innerHTML=`<span style="min-width:20px;height:20px;border-radius:50%;background:${z.color};color:#fff;font-weight:700;font-size:.68rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${i+1}</span><span><strong style="color:#1c2b3a">${z.label}</strong> — <span style="color:#7a8a95">${z.detail}</span></span>`;
+      leg.appendChild(row);
+    });
+    f.style.cssText='flex-direction:column;align-items:stretch;padding:0;min-height:auto;';
+    f.innerHTML=''; f.appendChild(c); f.appendChild(leg);
+  };
+  img.src=dataUrl;
+}
+
+// ── OPTION C ──────────────────────────────────────────────────────────────────
+async function runC() {
+  if (!check(false)) return;
+  go('C',true,'Building before/after...');
+  try {
+    const html = await claude(photoMsg(
+      `Analyse this photo and build a before/after HTML comparison for: ${document.getElementById('desc').value.trim()}
+
+Return ONLY a self-contained HTML snippet with two side-by-side panels:
+- LEFT "Before": show the original photo using <img> with src="${dataUrl}" style="width:100%;height:auto;border-radius:8px;display:block"
+- RIGHT "After": a vivid aspirational CSS illustration of the finished renovation — detailed shapes, materials, colours
+
+Both panels same proportions. Add "Before" / "After ✨" labels above each. Use inline styles. Width: 100%.
+Return ONLY the HTML.`
+    ));
+    const f=document.getElementById('fC');
+    f.style.cssText='flex-direction:column;align-items:stretch;padding:.5rem;min-height:auto;';
+    f.innerHTML=html.replace(/```html|```/g,'').trim();
+    go('C',false);
+  } catch(e){go('C',false);err('C',e.message);}
+}
+
+// ── OPTION D: PHOTOREALISTIC ──────────────────────────────────────────────────
+async function runD() {
+  if (!check(true)) return;
+  const desc = document.getElementById('desc').value.trim();
+  const ok = document.getElementById('openaiKey').value.trim();
+  go('D',true,'Building edit prompt...');
+  try {
+    // Craft a precise edit prompt using Claude vision
+    let editPrompt = `Edit this photo to show the following renovation completed photorealistically: ${desc}. Keep the same camera angle, lighting conditions, and surrounding environment. Make it look like a real photograph.`;
+    const ak = document.getElementById('anthropicKey').value.trim();
+    if (ak) {
+      try {
+        st('D','Crafting precise edit prompt...');
+        editPrompt = await claude(photoMsg(
+          `Analyse this photo carefully. Write a precise image editing instruction for GPT to apply this renovation to the exact scene: ${desc}
+
+Instruction must:
+- Start with "Edit this photo to..."
+- Describe what currently exists (so model preserves it)
+- Specify exactly what to add/change/remove
+- Include materials, colors, textures
+- State what NOT to change (same angle, same sky, same neighbours)
+Max 100 words. Return ONLY the instruction.`
+        ),300);
+      } catch(e){/* use fallback prompt */}
+    }
+
+    st('D','Generating photorealistic render...');
+    const fd = new FormData();
+    fd.append('model','gpt-image-1');
+    fd.append('prompt', editPrompt);
+    fd.append('n','1');
+    fd.append('size','1024x1024');
+    fd.append('image', new File([imgBlob],'photo.jpg',{type:'image/jpeg'}));
+
+    const r = await fetch('https://api.openai.com/v1/images/edits',{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${ok}`},
+      body:fd
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error?.message||'Image generation failed');
+
+    const src = d.data[0].b64_json
+      ? 'data:image/png;base64,'+d.data[0].b64_json
+      : d.data[0].url;
+
+    const f=document.getElementById('fD');
+    f.style.cssText='flex-direction:column;align-items:stretch;padding:.5rem;min-height:auto;';
+    f.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%">
+      <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#7a8a95;font-weight:600;text-align:center;padding:4px 0">Before</div><img src="${dataUrl}" style="width:100%;height:auto;border-radius:8px;display:block;"></div>
+      <div><div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:#c8962a;font-weight:600;text-align:center;padding:4px 0">After ✨</div><img src="${src}" style="width:100%;height:auto;border-radius:8px;display:block;"></div>
+    </div>`;
+    go('D',false);
+  } catch(e){
+    go('D',false);
+    if (e.message.toLowerCase().includes('fetch')||e.message.toLowerCase().includes('failed to fetch')) {
+      err('D',`CORS error — OpenAI blocks direct browser calls from local files.<br><br>
+        <strong>Fix:</strong> serve the file over localhost:<br>
+        <code style="background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px;font-size:.78rem">npx serve .</code><br>
+        then open <code style="background:rgba(0,0,0,.06);padding:2px 6px;border-radius:4px;font-size:.78rem">http://localhost:3000/viz-test.html</code>`);
+    } else {
+      err('D',e.message);
+    }
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function go(o,on,msg) {
+  const btn=document.getElementById('btn'+o), bar=document.getElementById('b'+o);
+  if (on) {
+    btn.disabled=true; btn.classList.add('on');
+    btn.innerHTML=`<div class="spin"></div> ${msg||'Running...'}`;
+    bar.style.cssText='width:0;transition:none;';
+    setTimeout(()=>{bar.style.cssText='width:85%;transition:width 25s linear;';},50);
+  } else {
+    btn.disabled=false; btn.classList.remove('on');
+    btn.textContent=`▶ Run Option ${o}`;
+    bar.style.cssText='width:100%;';
+    setTimeout(()=>{bar.style.cssText='width:0;transition:none;';},600);
+  }
+  st(o, on?(msg||''):'');
+}
+function st(o,msg){document.getElementById('s'+o).textContent=msg;}
+function err(o,msg){
+  const ph=document.getElementById('ph'+o);
+  ph.style.display='flex'; ph.innerHTML=`<div class="err-box">${msg}</div>`;
+}
+function rate(o,v) {
+  ratings[o]=v;
+  document.querySelectorAll('.rbtn').forEach(b=>{
+    const oc=b.getAttribute('onclick');
+    if(oc===`rate('${o}','${v}')`) b.classList.add('sel');
+    else if(oc?.startsWith(`rate('${o}'`)) b.classList.remove('sel');
+  });
+  const vd=document.getElementById('verdict');
+  vd.classList.add('on');
+  document.getElementById('verdictText').textContent=
+    Object.entries(ratings).map(([k,v])=>`Option ${k}: ${v}`).join('  ·  ');
+}
+</script>
+</body>
+</html>

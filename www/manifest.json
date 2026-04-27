@@ -1,0 +1,47 @@
+{
+  "name": "FixRight — Home Repair Estimator",
+  "short_name": "FixRight",
+  "description": "AI-powered home repair and renovation estimator with photorealistic design visualization",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#1c2b3a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["utilities", "lifestyle", "productivity"],
+  "shortcuts": [
+    {
+      "name": "New Estimate",
+      "short_name": "Estimate",
+      "url": "/?tab=estimate",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Visualize",
+      "short_name": "Visualize",
+      "url": "/?tab=visualize",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
