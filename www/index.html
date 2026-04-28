@@ -1455,14 +1455,6 @@
             <div id="vizDescHint" style="display:none;font-size:0.76rem;color:var(--muted);margin-top:0.35rem;">💡 Concept loaded — add notes for specific tweaks, or leave blank to let the AI interpret.</div>
           </div>
 
-          <!-- Admin-only OpenAI key override -->
-          <div id="openaiKeyRow" style="display:none;background:rgba(200,150,42,0.06);border:1px solid rgba(200,150,42,0.25);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;">
-            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.4rem;">👑 Admin: Override OpenAI key</div>
-            <input type="password" id="openaiKeyInput" placeholder="sk-... (leave blank to use server key)"
-              style="width:100%;font-family:monospace;font-size:0.82rem;padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;outline:none;"
-              oninput="saveOpenAIKey(this.value)">
-          </div>
-
           <div class="viz-nav-row">
             <button class="btn-viz-back" onclick="goVizStep(1)">← Back</button>
             <button class="btn-visualize" id="vizBtn" onclick="runVisualize()" style="flex:2;margin-top:0;">
@@ -1552,27 +1544,32 @@
 
   <!-- ADMIN SECTION -->
   <div class="page-section" id="sectionAdmin">
-    <div class="admin-hero">
-      <h2>⚙️ Admin Dashboard</h2>
-      <p>Super admin view — <strong>jabezzinabu@gmail.com</strong></p>
+
+    <!-- HEADER ROW -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
+      <div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--navy);margin-bottom:0.2rem;">⚙️ Admin Dashboard</h2>
+        <p style="color:var(--muted);font-size:0.85rem;">FixRight v1.0 · <span id="adminLastRefresh">—</span></p>
+      </div>
+      <button onclick="loadAdminData()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:0.4rem;">🔄 Refresh</button>
     </div>
 
-    <!-- STATS -->
-    <div class="stat-grid" id="adminStats">
+    <!-- STATS GRID -->
+    <div class="stat-grid" id="adminStats" style="margin-bottom:1.75rem;">
       <div class="stat-card highlight">
         <div class="stat-label">Total Users</div>
         <div class="stat-value" id="statUsers">—</div>
         <div class="stat-sub">registered accounts</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Estimates</div>
+        <div class="stat-label">Total Estimates</div>
         <div class="stat-value" id="statEstimates">—</div>
-        <div class="stat-sub">total saved</div>
+        <div class="stat-sub">all time</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">This Week</div>
         <div class="stat-value" id="statWeek">—</div>
-        <div class="stat-sub">estimates (7 days)</div>
+        <div class="stat-sub">new estimates</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Pro Users</div>
@@ -1581,34 +1578,62 @@
       </div>
     </div>
 
-    <!-- SUPABASE SETUP -->
+    <!-- APP HEALTH -->
     <div class="admin-section">
-      <div class="admin-section-head">🗄 Database Setup</div>
+      <div class="admin-section-head">🟢 App Health</div>
       <div class="admin-table-wrap" style="padding:1.25rem;">
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.85rem;line-height:1.6">
-          Run this SQL in your Supabase SQL Editor to create the <code>profiles</code> table and grant super admin access:
-        </p>
-        <div class="admin-sql-box" id="adminSql">create table if not exists profiles (
-  id uuid references auth.users(id) primary key,
-  email text,
-  role text default 'free',
-  created_at timestamp with time zone default now()
-);
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;" id="healthGrid">
+          <div style="background:var(--cream);border-radius:10px;padding:0.85rem 1rem;border:1px solid var(--border);">
+            <div style="font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Supabase</div>
+            <div id="healthDb" style="font-size:0.9rem;font-weight:600;color:var(--sage);">● Connected</div>
+          </div>
+          <div style="background:var(--cream);border-radius:10px;padding:0.85rem 1rem;border:1px solid var(--border);">
+            <div style="font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Anthropic API</div>
+            <div id="healthAnthropic" style="font-size:0.9rem;font-weight:600;color:var(--muted);">● Pending</div>
+          </div>
+          <div style="background:var(--cream);border-radius:10px;padding:0.85rem 1rem;border:1px solid var(--border);">
+            <div style="font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">OpenAI API</div>
+            <div id="healthOpenAI" style="font-size:0.9rem;font-weight:600;color:var(--muted);">● Pending</div>
+          </div>
+          <div style="background:var(--cream);border-radius:10px;padding:0.85rem 1rem;border:1px solid var(--border);">
+            <div style="font-size:0.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Version</div>
+            <div style="font-size:0.9rem;font-weight:600;color:var(--navy);">v1.0 MVP</div>
+          </div>
+        </div>
+        <button onclick="runHealthChecks()" style="margin-top:1rem;background:var(--navy);color:white;border:none;border-radius:8px;padding:0.5rem 1.25rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Run Health Checks</button>
+      </div>
+    </div>
 
-alter table profiles enable row level security;
-create policy "Users read own profile" on profiles
-  for select using (auth.uid() = id);
-create policy "Admin reads all profiles" on profiles
-  for all using (true);
-
--- Grant super admin to jabezzinabu@gmail.com
-insert into profiles (id, email, role)
-select id, email, 'admin'
-from auth.users
-where email = 'jabezzinabu@gmail.com'
-on conflict (id) do update set role = 'admin';</div>
-        <button class="btn-copy-sql" onclick="copySql()">📋 Copy SQL</button>
-        <p style="font-size:0.76rem;color:var(--muted);margin-top:0.75rem;">After running this, sign out and back in to activate admin access.</p>
+    <!-- USER MANAGEMENT -->
+    <div class="admin-section">
+      <div class="admin-section-head">👥 User Management</div>
+      <div class="admin-table-wrap">
+        <!-- Search + filter bar -->
+        <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:0.65rem;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="userSearch" placeholder="Search by email..." oninput="filterUsers()"
+            style="flex:1;min-width:160px;padding:0.5rem 0.85rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
+          <select id="userRoleFilter" onchange="filterUsers()"
+            style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;background:white;">
+            <option value="">All roles</option>
+            <option value="admin">Admin</option>
+            <option value="pro">Pro</option>
+            <option value="free">Free</option>
+          </select>
+        </div>
+        <div class="admin-loading" id="usersLoading">Loading users...</div>
+        <table class="admin-table" id="usersTable" style="display:none">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Estimates</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+        </table>
+        <div class="admin-empty" id="usersEmpty" style="display:none">No users found</div>
       </div>
     </div>
 
@@ -1623,33 +1648,13 @@ on conflict (id) do update set role = 'admin';</div>
               <th>Project</th>
               <th>Price Range</th>
               <th>Region</th>
-              <th>User ID</th>
+              <th>User</th>
               <th>Date</th>
             </tr>
           </thead>
           <tbody id="estimatesBody"></tbody>
         </table>
         <div class="admin-empty" id="estimatesEmpty" style="display:none">No estimates yet</div>
-      </div>
-    </div>
-
-    <!-- USER MANAGEMENT -->
-    <div class="admin-section">
-      <div class="admin-section-head">👥 User Profiles</div>
-      <div class="admin-table-wrap">
-        <div class="admin-loading" id="usersLoading">Loading users...</div>
-        <table class="admin-table" id="usersTable" style="display:none">
-          <thead>
-            <tr>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Joined</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="usersBody"></tbody>
-        </table>
-        <div class="admin-empty" id="usersEmpty" style="display:none">No profiles found — run the SQL above first</div>
       </div>
     </div>
 
@@ -1660,8 +1665,8 @@ on conflict (id) do update set role = 'admin';</div>
         <div style="display:flex;flex-direction:column;gap:0.75rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);">
             <div>
-              <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Free Visualizations</div>
-              <div style="font-size:0.78rem;color:var(--muted)">Allow first visualization without sign-up</div>
+              <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Free Visualization</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Allow first visualization free before paywall</div>
             </div>
             <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted)">
               <input type="checkbox" id="flagFreeViz" checked onchange="saveFlag('freeViz',this.checked)" style="width:16px;height:16px;accent-color:var(--rust)">
@@ -1670,15 +1675,25 @@ on conflict (id) do update set role = 'admin';</div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);">
             <div>
-              <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Upgrade Prompt Delay</div>
-              <div style="font-size:0.78rem;color:var(--muted)">Seconds after first viz before showing upgrade modal</div>
+              <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Discover Tab</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Show Discover to all users (currently admin-only)</div>
             </div>
-            <input type="number" id="flagUpgradeDelay" value="4" min="0" max="30" onchange="saveFlag('upgradeDelay',this.value)" style="width:70px;padding:0.35rem 0.6rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.88rem;text-align:center;">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted)">
+              <input type="checkbox" id="flagDiscoverPublic" onchange="toggleDiscoverPublic(this.checked)" style="width:16px;height:16px;accent-color:var(--rust)">
+              Enabled
+            </label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Upgrade Prompt Delay</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Seconds after first viz before upgrade modal</div>
+            </div>
+            <input type="number" id="flagUpgradeDelay" value="4" min="0" max="60" onchange="saveFlag('upgradeDelay',this.value)" style="width:70px;padding:0.35rem 0.6rem;border:1.5px solid var(--border);border-radius:7px;font-size:0.88rem;text-align:center;">
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;">
             <div>
               <div style="font-weight:600;font-size:0.9rem;color:var(--navy)">Maintenance Mode</div>
-              <div style="font-size:0.78rem;color:var(--muted)">Show a banner to all users (for downtime notices)</div>
+              <div style="font-size:0.78rem;color:var(--muted)">Show maintenance banner to all users</div>
             </div>
             <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted)">
               <input type="checkbox" id="flagMaintenance" onchange="saveFlag('maintenance',this.checked)" style="width:16px;height:16px;accent-color:var(--rust)">
@@ -1686,6 +1701,24 @@ on conflict (id) do update set role = 'admin';</div>
             </label>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- INVITE USER -->
+    <div class="admin-section">
+      <div class="admin-section-head">✉️ Invite User</div>
+      <div class="admin-table-wrap" style="padding:1.25rem;">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.55;">Grant Pro or Admin access to a user by email. They'll need to sign up first.</p>
+        <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
+          <input type="email" id="inviteEmail" placeholder="user@email.com"
+            style="flex:1;min-width:200px;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;">
+          <select id="inviteRole" style="padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;background:white;">
+            <option value="pro">Pro</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button onclick="grantRoleByEmail()" style="background:var(--rust);color:white;border:none;border-radius:9px;padding:0.65rem 1.25rem;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Grant Access</button>
+        </div>
+        <div id="inviteResult" style="margin-top:0.75rem;font-size:0.82rem;"></div>
       </div>
     </div>
 
@@ -2243,9 +2276,7 @@ function grantSuperAdmin() {
   // Show admin + discover tabs
   document.getElementById('tabAdmin').style.display = 'flex';
   document.getElementById('tabDiscover').style.display = 'flex';
-  // Show OpenAI key override for admin
-  const kr = document.getElementById('openaiKeyRow');
-  if (kr) kr.style.display = 'block';
+
   // Show admin badge on avatar
   document.getElementById('userAvatar').style.background = 'linear-gradient(135deg, var(--gold), #e8a820)';
   document.getElementById('userAvatar').style.color = 'var(--navy)';
@@ -2721,9 +2752,21 @@ function estimateThisDesign() {
     document.getElementById('photoPlaceholder').style.display = 'none';
     document.getElementById('photoClear').style.display = 'flex';
 
-    // Pre-fill description from viz
-    const vizDesc = document.getElementById('vizDesc').value.trim();
-    if (vizDesc) document.getElementById('description').value = vizDesc;
+    // Build comprehensive description from concept + user notes
+    const userNotes = document.getElementById('vizDesc').value.trim();
+    const conceptDesc = vizConceptItem?.desc || '';
+    const conceptTitle = vizConceptItem?.title || '';
+    const conceptStyle = vizConceptItem?.style || vizSelectedStyle || '';
+
+    let estimateDesc = '';
+    if (conceptTitle) {
+      estimateDesc = `${conceptStyle} renovation — ${conceptTitle}. `;
+      if (conceptDesc) estimateDesc += `Design includes: ${conceptDesc}. `;
+    }
+    if (userNotes) estimateDesc += `Additional changes: ${userNotes}. `;
+    estimateDesc += 'Please estimate all materials and labour for the complete renovation shown in the after image.';
+
+    document.getElementById('description').value = estimateDesc.trim();
 
     // Switch to estimate tab and scroll to form
     switchTab('estimate');
@@ -2775,6 +2818,14 @@ async function loadAdminData() {
   loadAdminStats();
   loadAdminEstimates();
   loadAdminUsers();
+  runHealthChecks();
+  const el = document.getElementById('adminLastRefresh');
+  if (el) el.textContent = 'Last refreshed: ' + new Date().toLocaleTimeString();
+  // Restore feature flag states
+  if (localStorage.getItem('flag_discoverPublic') === '1') {
+    const cb = document.getElementById('flagDiscoverPublic');
+    if (cb) cb.checked = true;
+  }
 }
 
 async function loadAdminStats() {
@@ -2832,6 +2883,8 @@ async function loadAdminEstimates() {
   }
 }
 
+let _allUsers = [];
+
 async function loadAdminUsers() {
   const loading = document.getElementById('usersLoading');
   const table = document.getElementById('usersTable');
@@ -2840,26 +2893,99 @@ async function loadAdminUsers() {
     const { data, error } = await db.from('profiles')
       .select('id, email, role, created_at')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
     loading.style.display = 'none';
     if (error) throw error;
-    if (!data?.length) { empty.style.display = 'block'; return; }
-    const tbody = document.getElementById('usersBody');
-    tbody.innerHTML = data.map(u => `
-      <tr>
-        <td style="font-weight:500">${u.email || '—'}</td>
-        <td><span class="user-role-pill role-${u.role||'free'}">${u.role||'free'}</span></td>
-        <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString()}</td>
-        <td style="display:flex;gap:0.4rem;flex-wrap:wrap">
-          ${u.role !== 'pro' ? `<button class="btn-admin-action" onclick="setUserRole('${u.id}','pro')">→ Pro</button>` : ''}
-          ${u.role !== 'free' && u.email !== SUPER_ADMIN_EMAIL ? `<button class="btn-admin-action danger" onclick="setUserRole('${u.id}','free')">→ Free</button>` : ''}
-          ${u.email === SUPER_ADMIN_EMAIL ? '<span style="font-size:0.75rem;color:var(--gold)">👑 Super Admin</span>' : ''}
-        </td>
-      </tr>`).join('');
+    _allUsers = data || [];
+    if (!_allUsers.length) { empty.style.display = 'block'; return; }
+    renderUsersTable(_allUsers);
     table.style.display = 'table';
   } catch(e) {
-    loading.textContent = 'Error — run the SQL above to create the profiles table first.';
+    loading.textContent = 'Error loading users: ' + e.message;
   }
+}
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersBody');
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td style="font-weight:500;max-width:180px;overflow:hidden;text-overflow:ellipsis;">${u.email || '—'}</td>
+      <td><span class="user-role-pill role-${u.role||'free'}">${u.role||'free'}</span></td>
+      <td style="color:var(--muted);font-size:0.82rem;">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td style="color:var(--muted);font-size:0.82rem;" id="estCount_${u.id}">—</td>
+      <td>
+        <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+          ${u.role !== 'pro' && u.role !== 'admin' ? `<button class="btn-admin-action" onclick="setUserRole('${u.id}','pro')">→ Pro</button>` : ''}
+          ${u.role === 'pro' ? `<button class="btn-admin-action danger" onclick="setUserRole('${u.id}','free')">→ Free</button>` : ''}
+          ${u.role !== 'admin' && u.email !== SUPER_ADMIN_EMAIL ? `<button class="btn-admin-action" onclick="setUserRole('${u.id}','admin')">→ Admin</button>` : ''}
+          ${u.email === SUPER_ADMIN_EMAIL ? '<span style="font-size:0.72rem;color:var(--gold);font-weight:600;">👑 Super</span>' : ''}
+          ${u.role !== SUPER_ADMIN_EMAIL && u.email !== SUPER_ADMIN_EMAIL ? `<button class="btn-admin-action danger" onclick="confirmDeleteUser('${u.id}','${u.email}')">🗑</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const search = document.getElementById('userSearch').value.toLowerCase();
+  const role = document.getElementById('userRoleFilter').value;
+  const filtered = _allUsers.filter(u => {
+    const matchEmail = !search || (u.email || '').toLowerCase().includes(search);
+    const matchRole = !role || u.role === role;
+    return matchEmail && matchRole;
+  });
+  renderUsersTable(filtered);
+  const empty = document.getElementById('usersEmpty');
+  const table = document.getElementById('usersTable');
+  if (filtered.length === 0) { empty.style.display = 'block'; table.style.display = 'none'; }
+  else { empty.style.display = 'none'; table.style.display = 'table'; }
+}
+
+async function confirmDeleteUser(id, email) {
+  if (!confirm(`Remove user ${email}? This will delete their profile and role. Their estimates will remain.`)) return;
+  try {
+    const { error } = await db.from('profiles').delete().eq('id', id);
+    if (error) throw error;
+    showToast('✓ User removed');
+    loadAdminUsers();
+    loadAdminStats();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function grantRoleByEmail() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const role = document.getElementById('inviteRole').value;
+  const result = document.getElementById('inviteResult');
+  if (!email) { result.innerHTML = '<span style="color:var(--rust)">Please enter an email address</span>'; return; }
+  
+  result.innerHTML = '<span style="color:var(--muted)">Looking up user...</span>';
+  try {
+    // Find user by email in profiles
+    const { data, error } = await db.from('profiles').select('id, email, role').eq('email', email).single();
+    if (error || !data) {
+      result.innerHTML = `<span style="color:var(--rust)">User not found — they need to sign up first at fixright.vercel.app</span>`;
+      return;
+    }
+    await setUserRole(data.id, role);
+    result.innerHTML = `<span style="color:var(--sage)">✓ ${email} granted ${role} access</span>`;
+    document.getElementById('inviteEmail').value = '';
+    loadAdminUsers();
+  } catch(e) {
+    result.innerHTML = `<span style="color:var(--rust)">Error: ${e.message}</span>`;
+  }
+}
+
+function toggleDiscoverPublic(enabled) {
+  // Show/hide discover tab for all users
+  const tab = document.getElementById('tabDiscover');
+  if (enabled) {
+    tab.style.display = 'flex';
+    localStorage.setItem('flag_discoverPublic', '1');
+  } else {
+    if (!isAdmin()) tab.style.display = 'none';
+    localStorage.removeItem('flag_discoverPublic');
+  }
+  saveFlag('discoverPublic', enabled);
+  showToast(enabled ? '✓ Discover tab visible to all users' : '✓ Discover tab hidden from regular users');
 }
 
 async function setUserRole(userId, role) {
@@ -3544,6 +3670,53 @@ switchTab = function(tab) {
   _origSwitchTabDiscover(tab);
   if (tab === 'discover') { showCategoryView(); renderDiscoverCategories(); }
 };
+
+
+// ─── ADMIN HEALTH CHECKS ──────────────────────────────────────────────────────
+async function runHealthChecks() {
+  // Check Anthropic
+  const anthEl = document.getElementById('healthAnthropic');
+  anthEl.textContent = 'Checking...'; anthEl.style.color = 'var(--muted)';
+  try {
+    const r = await fetch('/api/anthropic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 5, messages: [{ role: 'user', content: 'hi' }] })
+    });
+    const d = await r.json();
+    if (d.content || d.id) {
+      anthEl.textContent = '● Connected'; anthEl.style.color = 'var(--sage)';
+    } else {
+      anthEl.textContent = '● Error: ' + (d.error || 'unknown'); anthEl.style.color = 'var(--rust)';
+    }
+  } catch(e) {
+    anthEl.textContent = '● Failed'; anthEl.style.color = 'var(--rust)';
+  }
+
+  // Check OpenAI via proxy (small dummy call)
+  const oaiEl = document.getElementById('healthOpenAI');
+  oaiEl.textContent = 'Checking...'; oaiEl.style.color = 'var(--muted)';
+  try {
+    const r = await fetch('/api/openai-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'test', imageBase64: 'dGVzdA==', size: '1024x1024' })
+    });
+    const d = await r.json();
+    // If we get an OpenAI error about invalid image (not key), the key works
+    if (d.error && d.error.toLowerCase().includes('key')) {
+      oaiEl.textContent = '● Key error'; oaiEl.style.color = 'var(--rust)';
+    } else {
+      oaiEl.textContent = '● Connected'; oaiEl.style.color = 'var(--sage)';
+    }
+  } catch(e) {
+    oaiEl.textContent = '● Failed'; oaiEl.style.color = 'var(--rust)';
+  }
+
+  // DB already shown as connected if we got here
+  document.getElementById('healthDb').textContent = dbReady ? '● Connected' : '● Disconnected';
+  document.getElementById('healthDb').style.color = dbReady ? 'var(--sage)' : 'var(--rust)';
+}
 
 </script>
 
