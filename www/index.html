@@ -1218,14 +1218,8 @@
     backdrop-filter: blur(4px);
   }
   .combined-viz-footer {
-    background: var(--navy); padding: 0.65rem 1rem;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .combined-viz-footer span { color: rgba(255,255,255,0.7); font-size: 0.78rem; }
-  .combined-viz-footer button {
-    background: var(--rust); color: white; border: none; border-radius: 7px;
-    padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    background: var(--navy); padding: 0.75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 0.65rem;
   }
 
   /* ── SAVE PROMPT ─────────────────────────────────────────────────────────── */
@@ -1407,9 +1401,15 @@
           <div class="combined-viz-badge">After</div>
         </div>
       </div>
-      <div class="combined-viz-footer">
-        <span>AI visualization of your renovation</span>
-        <button onclick="openFullViz()">View Full →</button>
+      <!-- VIZ LOADING STATE -->
+      <div id="combinedVizLoading" style="display:none;padding:2rem;text-align:center;background:var(--navy);">
+        <div class="spinner" style="border-color:rgba(255,255,255,0.15);border-top-color:var(--gold);margin:0 auto 0.75rem;"></div>
+        <div style="color:rgba(255,255,255,0.8);font-size:0.88rem;" id="combinedVizLoadingText">Generating visualization...</div>
+      </div>
+      <!-- VIZ ACTIONS — shown after render -->
+      <div class="combined-viz-footer" id="combinedVizActions" style="display:none;">
+        <button onclick="reRenderViz()" style="background:rgba(255,255,255,0.12);color:white;border:none;border-radius:7px;padding:0.5rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Re-render</button>
+        <button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">✅ Looks good — Estimate This</button>
       </div>
     </div>
 
@@ -2060,7 +2060,6 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
     const parsed = JSON.parse(clean);
     currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: USER_ID };
     renderResults(currentEstimate);
-    incEstCount();
     // Hide save prompt initially (shown by combined flow or after delay)
     hideSavePrompt();
   } catch(err) {
@@ -2800,9 +2799,6 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     document.getElementById('vizResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
     showToast('✨ Visualization complete!');
     setTimeout(showInstallBanner, 3000);
-
-    // Show save prompt after success
-    if (!vizModeEnabled) setTimeout(showSavePrompt, 1200);
 
     // Show upgrade prompt after success (skip for pro/admin)
     if (!isPro()) {
@@ -4034,79 +4030,242 @@ function openFullViz() {
 
 // ─── COMBINED RUN ESTIMATE + VIZ ──────────────────────────────────────────────
 async function runCombinedEstimate() {
-  // Run estimate first
-  await runEstimate();
+  const desc = document.getElementById('description').value.trim();
+  if (!desc && !imageBase64) { showToast('Please add a photo or description'); return; }
+  if (!checkEstPaywall()) return;
 
-  // If viz mode enabled and estimate succeeded and user has photo
-  if (vizModeEnabled && currentEstimate && imageBase64) {
-    // Check viz paywall
+  if (vizModeEnabled && imageBase64) {
+    // VIZ FIRST — check paywall
     if (!isPro() && getVizCount() >= 1) {
-      showToast('✨ Upgrade to Pro to visualize your estimates');
+      showUpgradeModal();
       return;
     }
+    await generateCombinedViz();
+  } else {
+    // No viz — just run estimate directly
+    await runEstimate();
+    setTimeout(showSavePrompt, 1200);
+  }
+}
 
-    // Use estimate description as viz prompt
-    const desc = document.getElementById('description').value.trim();
-    const vizPrompt = currentEstimate.title + '. ' + desc;
+async function generateCombinedViz() {
+  const desc = document.getElementById('description').value.trim();
 
-    // Load photo into viz state
-    vizPhotoBase64 = imageBase64;
-    vizPhotoDataUrl = 'data:image/jpeg;base64,' + imageBase64;
+  // Show the viz panel in loading state
+  const panel = document.getElementById('combinedVizPanel');
+  const loading = document.getElementById('combinedVizLoading');
+  const actions = document.getElementById('combinedVizActions');
+  const beforeAfter = document.querySelector('.combined-viz-before-after');
 
-    // Run visualization in background
-    const loadingEl = document.getElementById('loading');
-    const tipEl = document.getElementById('loadingTip');
-    if (loadingEl) loadingEl.style.display = 'block';
-    if (tipEl) tipEl.textContent = '✨ Now generating visualization...';
+  panel.classList.add('visible');
+  loading.style.display = 'block';
+  actions.style.display = 'none';
+  if (beforeAfter) beforeAfter.style.display = 'none';
+  document.getElementById('combinedVizLoadingText').textContent = 'Crafting your visualization...';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Set viz state
+  vizPhotoBase64 = imageBase64;
+  vizPhotoDataUrl = 'data:image/jpeg;base64,' + imageBase64;
+
+  try {
+    // Step 1: Generate a high-quality photorealistic prompt via Claude
+    document.getElementById('combinedVizLoadingText').textContent = 'Analysing your space...';
+    let editPrompt = `Edit this photo to show the following renovation completed photorealistically: ${desc}. Use realistic materials, textures, and lighting. Match the perspective and scale of the original photo exactly. Do not add cartoon effects or unrealistic elements. Photorealistic architectural photography style.`;
 
     try {
-      // Get edit prompt from Claude
-      let editPrompt = vizPrompt + '. Show the completed renovation photorealistically.';
+      const pr = await fetch('/api/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 250,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+              { type: 'text', text: `You are an expert at writing image editing prompts for photorealistic home renovation renders.
+
+Look at this photo carefully. Write a precise image editing instruction to show this renovation completed:
+"${desc}"
+
+Rules:
+- Start with "Edit this photo to show"
+- Describe EXACT materials, colors, textures (e.g. "decomposed granite in warm beige tones", "river rocks 3-5 inch diameter", "Japanese maple with red leaves")
+- Specify what to KEEP unchanged from the original (fence, existing structures, sky, etc.)
+- Use the phrase "photorealistic architectural photography" 
+- No cartoons, no illustrations, no HDR oversaturation
+- Match the exact camera angle and perspective of the original
+- Max 120 words
+- Return ONLY the prompt, no explanation` }
+            ]
+          }]
+        })
+      });
+      const pd = await pr.json();
+      if (pd.content?.[0]?.text) editPrompt = pd.content[0].text;
+    } catch(e) { console.error('Prompt gen error:', e); }
+
+    // Step 2: Generate the image
+    document.getElementById('combinedVizLoadingText').textContent = 'Rendering your renovation...';
+    const imgResp = await fetch('/api/openai-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: editPrompt, imageBase64: imageBase64, size: '1024x1024' })
+    });
+    const imgData = await imgResp.json();
+
+    if (imgData.data?.[0]?.b64_json) {
+      vizResultImageSrc = 'data:image/png;base64,' + imgData.data[0].b64_json;
+      incVizCount();
+
+      // Show before/after
+      document.getElementById('combinedVizBefore').src = vizPhotoDataUrl;
+      document.getElementById('combinedVizAfter').src = vizResultImageSrc;
+      if (beforeAfter) beforeAfter.style.display = 'grid';
+      loading.style.display = 'none';
+      actions.style.display = 'flex';
+    } else {
+      throw new Error(imgData.error || 'No image returned');
+    }
+
+  } catch(e) {
+    loading.style.display = 'none';
+    panel.classList.remove('visible');
+    showToast('Visualization failed — ' + (e.message || 'please try again'));
+    console.error('Viz error:', e);
+  }
+}
+
+async function reRenderViz() {
+  // Reset and re-run the visualization
+  vizResultImageSrc = null;
+  await generateCombinedViz();
+}
+
+async function confirmVizAndEstimate() {
+  // User approved the viz — now run the smart estimate
+  const actions = document.getElementById('combinedVizActions');
+  actions.innerHTML = '<div style="color:rgba(255,255,255,0.7);font-size:0.85rem;padding:0.5rem 0;">⏳ Running area analysis + estimate...</div>';
+
+  // Show loading
+  const loading = document.getElementById('loading');
+  const tipEl = document.getElementById('loadingTip');
+  if (loading) loading.style.display = 'block';
+  if (tipEl) tipEl.textContent = 'Calculating area and quantities...';
+
+  const desc = document.getElementById('description').value.trim();
+
+  try {
+    // Step 1: Area analysis — Claude looks at before photo to estimate dimensions
+    let areaContext = '';
+    try {
+      const areaResp = await fetch('/api/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+              { type: 'text', text: `Analyze this photo and estimate the approximate dimensions and area of the space. Look for visual cues like fence panels (typically 8ft wide), doors (typically 3ft wide), standard pavers (12"x12" or 24"x24"), steps, or any other reference objects. 
+
+Provide a brief, specific estimate like:
+- Total area: approximately X sq ft
+- Key dimensions: X ft wide × Y ft deep
+- Reference clues used: [what you used to estimate]
+
+Be concise — 3-4 lines max. Return only the measurements, no explanation.` }
+            ]
+          }]
+        })
+      });
+      const areaData = await areaResp.json();
+      if (areaData.content?.[0]?.text) areaContext = areaData.content[0].text;
+    } catch(e) { console.error('Area analysis error:', e); }
+
+    if (tipEl) tipEl.textContent = 'Identifying additions and calculating costs...';
+
+    // Step 2: Delta analysis — what was added in after vs before
+    let deltaContext = '';
+    if (vizResultImageSrc) {
       try {
-        const pr = await fetch('/api/anthropic', {
+        const afterBase64 = vizResultImageSrc.split(',')[1];
+        const deltaResp = await fetch('/api/anthropic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 200,
+            max_tokens: 300,
             messages: [{
               role: 'user',
               content: [
                 { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
-                { type: 'text', text: `Write a precise image editing instruction for this renovation: ${vizPrompt}. Start with "Edit this photo to...". Max 80 words. Return ONLY the instruction.` }
+                { type: 'image', source: { type: 'base64', media_type: 'image/png', data: afterBase64 } },
+                { type: 'text', text: `Image 1 is BEFORE. Image 2 is AFTER renovation.
+
+List ONLY what was ADDED or CHANGED. Do NOT include anything already present in the before image.
+
+Format exactly:
+ADDED: [comma-separated list of new elements]
+CHANGED: [comma-separated list of modified elements]  
+EXISTING (exclude from estimate): [comma-separated list of things already there]
+
+Be specific about materials (e.g. "decomposed granite ground cover", "river rocks", "Japanese maple tree x2").` }
               ]
             }]
           })
         });
-        const pd = await pr.json();
-        if (pd.content?.[0]?.text) editPrompt = pd.content[0].text;
-      } catch(e) {}
-
-      // Call OpenAI
-      const imgResp = await fetch('/api/openai-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: editPrompt, imageBase64: imageBase64, size: '1024x1024' })
-      });
-      const imgData = await imgResp.json();
-
-      if (imgData.data?.[0]?.b64_json) {
-        vizResultImageSrc = 'data:image/png;base64,' + imgData.data[0].b64_json;
-        incVizCount();
-        // Show combined panel
-        showCombinedViz(vizPhotoDataUrl, vizResultImageSrc);
-        // Also store in current estimate for saving
-        if (currentEstimate) currentEstimate.vizImage = vizResultImageSrc;
-      }
-    } catch(e) {
-      console.error('Combined viz error:', e);
-    } finally {
-      if (loadingEl) loadingEl.style.display = 'none';
+        const deltaData = await deltaResp.json();
+        if (deltaData.content?.[0]?.text) deltaContext = deltaData.content[0].text;
+      } catch(e) { console.error('Delta error:', e); }
     }
-  }
 
-  // Show save prompt after everything
-  setTimeout(showSavePrompt, 800);
+    // Step 3: Build comprehensive estimate description
+    let estimateDesc = desc;
+    if (areaContext || deltaContext) {
+      estimateDesc = `${desc}
+
+SPACE DIMENSIONS (from photo analysis):
+${areaContext}
+
+RENOVATION ADDITIONS ONLY (do not estimate existing items):
+${deltaContext}
+
+IMPORTANT: Use the area measurements above to calculate accurate material quantities. Only estimate the ADDED and CHANGED items listed above — do NOT include cost for existing structures like fences, concrete, existing grass, etc.`;
+    }
+
+    // Override the description field temporarily for the estimate
+    const descEl = document.getElementById('description');
+    const origDesc = descEl.value;
+    descEl.value = estimateDesc;
+
+    if (loading) loading.style.display = 'none';
+
+    // Run the estimate
+    await runEstimate();
+
+    // Restore original description
+    descEl.value = origDesc;
+    incEstCount();
+
+    // Store viz in estimate
+    if (currentEstimate) currentEstimate.vizImage = vizResultImageSrc;
+
+    // Restore confirm buttons
+    actions.innerHTML = `
+      <button onclick="reRenderViz()" style="background:rgba(255,255,255,0.12);color:white;border:none;border-radius:7px;padding:0.5rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Re-render</button>
+      <button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">✅ Re-estimate</button>`;
+
+    setTimeout(showSavePrompt, 800);
+
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    showToast('Estimate failed — ' + (e.message || 'please try again'));
+    actions.innerHTML = `<button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩ Try Again</button>`;
+  }
 }
 
 // ─── ADMIN: CREATE USER ───────────────────────────────────────────────────────
@@ -4121,40 +4280,29 @@ async function adminCreateUser() {
   result.innerHTML = '<span style="color:var(--muted)">Creating user...</span>';
 
   try {
-    // Use Supabase admin API to create user
-    const resp = await fetch('https://zciyiltkaunbozoedfcr.supabase.co/auth/v1/admin/users', {
+    const resp = await fetch('/api/create-user', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI',
-        'Authorization': 'Bearer ' + (await getServiceKey())
-      },
-      body: JSON.stringify({
-        email: email,
-        password: generateTempPassword(),
-        email_confirm: true,
-        user_metadata: { role: role }
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, role })
     });
-
     const data = await resp.json();
 
-    if (data.id) {
-      // Create profile entry
-      await db.from('profiles').upsert({
-        id: data.id, email: email, role: role
-      });
-      result.innerHTML = `<span style="color:var(--sage)">✓ User created! Temp password sent to ${email}. They can reset it on login.</span>`;
+    if (data.success) {
+      result.innerHTML = `
+        <div style="background:rgba(100,180,100,0.1);border:1px solid var(--sage);border-radius:8px;padding:0.75rem;margin-top:0.5rem;">
+          <div style="color:var(--sage);font-weight:600;margin-bottom:0.35rem;">✓ User created successfully</div>
+          <div style="font-size:0.8rem;color:var(--muted);">Email: <strong>${email}</strong></div>
+          <div style="font-size:0.8rem;color:var(--muted);">Role: <strong>${role}</strong></div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:0.35rem;">Temp password: <code style="background:var(--cream);padding:2px 6px;border-radius:4px;">${data.tempPassword}</code></div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:0.35rem;">Share this with them — they can change it after login</div>
+        </div>`;
       document.getElementById('inviteEmail').value = '';
       loadAdminUsers();
     } else {
-      result.innerHTML = `<span style="color:var(--rust)">Error: ${data.msg || data.message || JSON.stringify(data)}</span>`;
+      result.innerHTML = `<span style="color:var(--rust)">Error: ${data.error}</span>`;
     }
   } catch(e) {
-    // Fallback — just upsert the profile so they get the role when they sign up
-    result.innerHTML = `<span style="color:var(--gold)">⚠ Direct creation needs service key. Role pre-assigned — user will get ${role} access when they sign up with ${email}</span>`;
-    await db.from('profiles').upsert({ id: crypto.randomUUID(), email: email, role: role });
-    loadAdminUsers();
+    result.innerHTML = `<span style="color:var(--rust)">Error: ${e.message}</span>`;
   }
 }
 
