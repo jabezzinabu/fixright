@@ -3693,7 +3693,7 @@ async function runHealthChecks() {
     anthEl.textContent = '● Failed'; anthEl.style.color = 'var(--rust)';
   }
 
-  // Check OpenAI via proxy (small dummy call)
+  // Check OpenAI — if proxy returns a response at all (even image error), key is working
   const oaiEl = document.getElementById('healthOpenAI');
   oaiEl.textContent = 'Checking...'; oaiEl.style.color = 'var(--muted)';
   try {
@@ -3703,10 +3703,16 @@ async function runHealthChecks() {
       body: JSON.stringify({ prompt: 'test', imageBase64: 'dGVzdA==', size: '1024x1024' })
     });
     const d = await r.json();
-    // If we get an OpenAI error about invalid image (not key), the key works
-    if (d.error && d.error.toLowerCase().includes('key')) {
+    // Key errors mean the key is missing/invalid
+    const isKeyError = !d || (d.error && (
+      d.error.toLowerCase().includes('key') ||
+      d.error.toLowerCase().includes('auth') ||
+      d.error.toLowerCase().includes('not configured')
+    ));
+    if (isKeyError) {
       oaiEl.textContent = '● Key error'; oaiEl.style.color = 'var(--rust)';
     } else {
+      // Any other error (invalid image etc) means key is valid, API is reachable
       oaiEl.textContent = '● Connected'; oaiEl.style.color = 'var(--sage)';
     }
   } catch(e) {
