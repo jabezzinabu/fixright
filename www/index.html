@@ -2732,54 +2732,153 @@ function showVizError(msg) {
 }
 
 
-// ─── ESTIMATE THIS DESIGN ─────────────────────────────────────────────────────
-function estimateThisDesign() {
+// ─── ESTIMATE THIS DESIGN — DELTA ANALYSIS SKILL ─────────────────────────────
+// Architecture:
+//   Skill 1: Visualization (before + concept → after image) ✅
+//   Skill 2: Delta Analysis (before + after → what changed only) ← runs here
+//   Skill 3: Estimation (delta list → cost) ✅
+//
+// This function runs Skill 2 before Skill 3 so the estimator only prices
+// what was ADDED or CHANGED, not what already existed in the before image.
+
+async function estimateThisDesign() {
   if (!vizResultImageSrc) return;
 
-  // Copy the rendered "after" image into the estimate tab's photo zone
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width; canvas.height = img.height;
-    canvas.getContext('2d').drawImage(img, 0, 0);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
-    imageBase64 = dataUrl.split(',')[1];
-    imageMediaType = 'image/jpeg';
+  // ── Load after image into estimate tab ──────────────────────────────────────
+  const afterImg = new Image();
+  afterImg.crossOrigin = 'anonymous';
 
-    // Show preview in estimate tab
+  const loadAfterImage = () => new Promise((resolve, reject) => {
+    afterImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = afterImg.width; canvas.height = afterImg.height;
+      canvas.getContext('2d').drawImage(afterImg, 0, 0);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+      resolve({ dataUrl, base64: dataUrl.split(',')[1] });
+    };
+    afterImg.onerror = reject;
+    afterImg.src = vizResultImageSrc;
+  });
+
+  // Show loading state on the estimate button
+  const estimateBtn = document.querySelector('.btn-viz-action.primary-action');
+  if (estimateBtn) { estimateBtn.disabled = true; estimateBtn.textContent = '⏳ Analysing changes...'; }
+  showToast('🔍 Identifying what changed — building estimate...');
+
+  try {
+    // Load after image
+    const { dataUrl: afterDataUrl, base64: afterBase64 } = await loadAfterImage();
+
+    // ── SKILL 2: Delta Analysis ──────────────────────────────────────────────
+    // Send BEFORE + AFTER to Claude and ask only what was added/changed
+    let deltaDescription = '';
+
+    if (vizPhotoBase64) {
+      // We have the before image — run proper delta analysis
+      console.log('Delta Analysis: before image available, length:', vizPhotoBase64.length);
+      const deltaPrompt = `You are a renovation cost estimator's assistant performing a DELTA ANALYSIS.
+
+You are given TWO images:
+1. BEFORE image — the original space before any renovation
+2. AFTER image — the same space after AI-generated renovation
+
+Your task: Compare the two images carefully and identify ONLY what was ADDED or CHANGED.
+Do NOT include anything that existed in the before image.
+
+Return a structured list in this exact format:
+ADDED: [comma-separated list of new items, materials, or features]
+CHANGED: [comma-separated list of existing items that were modified]
+EXISTING (exclude from estimate): [comma-separated list of things already present before]
+
+Be specific about materials. For example:
+- "decomposed granite ground cover (approx 200 sq ft)" not just "gravel"
+- "3x ornamental cherry trees (15-gallon)" not just "trees"
+- "river rock border edging (approx 40 linear ft)" not just "rocks"
+
+Only list what you can clearly see was added or changed. Do not guess.`;
+
+      const deltaResp = await fetch('/api/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 400,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: 'BEFORE image:' },
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: vizPhotoBase64 } },
+              { type: 'text', text: 'AFTER image:' },
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: afterBase64 } },
+              { type: 'text', text: deltaPrompt }
+            ]
+          }]
+        })
+      });
+
+      const deltaData = await deltaResp.json();
+      if (deltaData.content?.[0]?.text) {
+        const raw = deltaData.content[0].text.trim();
+        // Extract just ADDED and CHANGED lines for the estimate
+        const addedMatch = raw.match(/ADDED:\s*(.+?)(?=
+|CHANGED:|EXISTING:|$)/s);
+        const changedMatch = raw.match(/CHANGED:\s*(.+?)(?=
+|EXISTING:|$)/s);
+        const existingMatch = raw.match(/EXISTING[^:]*:\s*(.+?)(?=
+|$)/s);
+
+        const added = addedMatch?.[1]?.trim() || '';
+        const changed = changedMatch?.[1]?.trim() || '';
+        const existing = existingMatch?.[1]?.trim() || '';
+
+        if (added || changed) {
+          deltaDescription = '';
+          if (added && added !== 'none' && added !== 'None') deltaDescription += `Added: ${added}. `;
+          if (changed && changed !== 'none' && changed !== 'None') deltaDescription += `Changed: ${changed}. `;
+          if (existing) deltaDescription += `Already existed before renovation (DO NOT include in estimate): ${existing}.`;
+        }
+      }
+    }
+
+    // ── Fallback if delta analysis failed or no before image ─────────────────
+    console.log('Delta result:', deltaDescription ? deltaDescription.substring(0,100) : 'EMPTY — using fallback');
+    if (!deltaDescription) {
+      const userNotes = document.getElementById('vizDesc').value.trim();
+      const conceptDesc = vizConceptItem?.desc || '';
+      const conceptTitle = vizConceptItem?.title || '';
+      const conceptStyle = vizConceptItem?.style || vizSelectedStyle || '';
+      deltaDescription = '';
+      if (conceptTitle) deltaDescription += `${conceptStyle} renovation — ${conceptTitle}. `;
+      if (conceptDesc) deltaDescription += `Design: ${conceptDesc}. `;
+      if (userNotes) deltaDescription += `Changes: ${userNotes}. `;
+      if (!deltaDescription) deltaDescription = 'Estimate only the renovation work and additions visible in this image.';
+    }
+
+    // ── Load after image into estimate photo zone ─────────────────────────────
+    imageBase64 = afterBase64;
+    imageMediaType = 'image/jpeg';
     const preview = document.getElementById('photoPreview');
-    preview.src = dataUrl; preview.style.display = 'block';
+    preview.src = afterDataUrl; preview.style.display = 'block';
     document.getElementById('photoPlaceholder').style.display = 'none';
     document.getElementById('photoClear').style.display = 'flex';
 
-    // Build comprehensive description from concept + user notes
-    const userNotes = document.getElementById('vizDesc').value.trim();
-    const conceptDesc = vizConceptItem?.desc || '';
-    const conceptTitle = vizConceptItem?.title || '';
-    const conceptStyle = vizConceptItem?.style || vizSelectedStyle || '';
+    // ── Set description with delta result ─────────────────────────────────────
+    document.getElementById('description').value = deltaDescription.trim();
 
-    let estimateDesc = '';
-    if (conceptTitle) {
-      estimateDesc = `${conceptStyle} renovation — ${conceptTitle}. `;
-      if (conceptDesc) estimateDesc += `Design includes: ${conceptDesc}. `;
-    }
-    if (userNotes) estimateDesc += `Additional changes: ${userNotes}. `;
-    estimateDesc += 'Please estimate all materials and labour for the complete renovation shown in the after image.';
-
-    document.getElementById('description').value = estimateDesc.trim();
-
-    // Switch to estimate tab and scroll to form
+    // ── Switch to estimate tab ────────────────────────────────────────────────
     switchTab('estimate');
     setTimeout(() => {
-      document.getElementById('description').focus();
       document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showToast('📸 Rendered image loaded — hit Get My Estimate!');
+      showToast('✅ Delta analysis complete — estimating additions only');
     }, 300);
-  };
 
-  // Handle both base64 data URLs and regular URLs
-  img.crossOrigin = 'anonymous';
-  img.src = vizResultImageSrc;
+  } catch(e) {
+    showToast('Could not analyse changes — loading estimate with full description');
+    // Graceful fallback — load estimate anyway with concept description
+    switchTab('estimate');
+  } finally {
+    if (estimateBtn) { estimateBtn.disabled = false; estimateBtn.textContent = '🔧 Estimate This Design'; }
+  }
 }
 
 // ─── EDIT & RE-RENDER ─────────────────────────────────────────────────────────
