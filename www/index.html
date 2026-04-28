@@ -1174,6 +1174,78 @@
     line-height: 1.5; margin-top: 0.25rem;
   }
 
+
+  /* ── VIZ TOGGLE ────────────────────────────────────────────────────────────── */
+  .viz-toggle-row {
+    display: flex; align-items: center; gap: 0.85rem;
+    background: linear-gradient(135deg, var(--navy), #2a3f52);
+    border-radius: 12px; padding: 0.9rem 1.1rem;
+    margin-bottom: 1rem; cursor: pointer;
+  }
+  .viz-toggle-row input[type=checkbox] { display: none; }
+  .viz-toggle-switch {
+    width: 44px; height: 24px; background: rgba(255,255,255,0.2);
+    border-radius: 99px; position: relative; flex-shrink: 0;
+    transition: background 0.25s;
+  }
+  .viz-toggle-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: white;
+    transition: transform 0.25s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .viz-toggle-row.active .viz-toggle-switch { background: var(--rust); }
+  .viz-toggle-row.active .viz-toggle-switch::after { transform: translateX(20px); }
+  .viz-toggle-label { flex: 1; }
+  .viz-toggle-label strong { color: white; font-size: 0.9rem; font-weight: 600; display: block; }
+  .viz-toggle-label span { color: rgba(255,255,255,0.6); font-size: 0.76rem; }
+  .viz-toggle-badge { background: var(--gold); color: var(--navy); font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+
+  /* ── COMBINED VIZ RESULT (above estimate results) ─────────────────────────── */
+  .combined-viz-panel {
+    border-radius: 12px; overflow: hidden; margin-bottom: 1.25rem;
+    border: 2px solid var(--rust); display: none;
+  }
+  .combined-viz-panel.visible { display: block; animation: fadeUp 0.4s ease both; }
+  .combined-viz-before-after {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  }
+  .combined-viz-side { position: relative; }
+  .combined-viz-side img { width: 100%; height: 180px; object-fit: cover; display: block; }
+  .combined-viz-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(28,43,58,0.8); color: white;
+    font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 99px;
+    backdrop-filter: blur(4px);
+  }
+  .combined-viz-footer {
+    background: var(--navy); padding: 0.65rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .combined-viz-footer span { color: rgba(255,255,255,0.7); font-size: 0.78rem; }
+  .combined-viz-footer button {
+    background: var(--rust); color: white; border: none; border-radius: 7px;
+    padding: 0.35rem 0.85rem; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── SAVE PROMPT ─────────────────────────────────────────────────────────── */
+  .save-prompt {
+    background: linear-gradient(135deg, var(--navy), #2a3f52);
+    border-radius: 12px; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 0.85rem;
+    margin-bottom: 1rem; animation: fadeUp 0.4s ease both; display: none;
+  }
+  .save-prompt.visible { display: flex; }
+  .save-prompt-icon { font-size: 1.75rem; flex-shrink: 0; }
+  .save-prompt-text { flex: 1; }
+  .save-prompt-text strong { color: white; font-size: 0.9rem; display: block; margin-bottom: 2px; }
+  .save-prompt-text span { color: rgba(255,255,255,0.6); font-size: 0.78rem; }
+  .save-prompt-btn {
+    background: var(--gold); color: var(--navy); border: none; border-radius: 8px;
+    padding: 0.55rem 1rem; font-size: 0.82rem; font-weight: 700;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; flex-shrink: 0;
+  }
+
 </style>
 </head>
 <body>
@@ -1298,7 +1370,17 @@
         </div>
       </div>
 
-      <button class="btn-estimate" id="submitBtn" onclick="runEstimate()">
+      <!-- VIZ TOGGLE -->
+      <div class="viz-toggle-row" id="vizToggleRow" onclick="toggleVizMode()">
+        <div class="viz-toggle-switch" id="vizToggleSwitch"></div>
+        <div class="viz-toggle-label">
+          <strong>✨ Also visualize this project</strong>
+          <span>See the renovation on your photo + get the estimate</span>
+        </div>
+        <span class="viz-toggle-badge">PRO</span>
+      </div>
+
+      <button class="btn-estimate" id="submitBtn" onclick="runCombinedEstimate()">
         🔧 Get My Estimate
       </button>
     </div>
@@ -1312,6 +1394,34 @@
 
     <!-- ERROR -->
     <div class="error-box" id="errorBox"></div>
+
+    <!-- COMBINED VIZ PANEL -->
+    <div class="combined-viz-panel" id="combinedVizPanel">
+      <div class="combined-viz-before-after">
+        <div class="combined-viz-side">
+          <img id="combinedVizBefore" src="" alt="Before">
+          <div class="combined-viz-badge">Before</div>
+        </div>
+        <div class="combined-viz-side">
+          <img id="combinedVizAfter" src="" alt="After">
+          <div class="combined-viz-badge">After</div>
+        </div>
+      </div>
+      <div class="combined-viz-footer">
+        <span>AI visualization of your renovation</span>
+        <button onclick="openFullViz()">View Full →</button>
+      </div>
+    </div>
+
+    <!-- SAVE PROMPT -->
+    <div class="save-prompt" id="savePrompt">
+      <div class="save-prompt-icon">💾</div>
+      <div class="save-prompt-text">
+        <strong>Save this project?</strong>
+        <span>Keep the estimate + visualization for later</span>
+      </div>
+      <button class="save-prompt-btn" onclick="saveEstimate();hideSavePrompt()">Save Now</button>
+    </div>
 
     <!-- RESULTS -->
     <div id="results">
@@ -1708,7 +1818,7 @@
     <div class="admin-section">
       <div class="admin-section-head">✉️ Invite User</div>
       <div class="admin-table-wrap" style="padding:1.25rem;">
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.55;">Grant Pro or Admin access to a user by email. They'll need to sign up first.</p>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;line-height:1.55;">Create a new user account directly. A temporary password will be generated and they can reset it on first login.</p>
         <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
           <input type="email" id="inviteEmail" placeholder="user@email.com"
             style="flex:1;min-width:200px;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;">
@@ -1716,7 +1826,7 @@
             <option value="pro">Pro</option>
             <option value="admin">Admin</option>
           </select>
-          <button onclick="grantRoleByEmail()" style="background:var(--rust);color:white;border:none;border-radius:9px;padding:0.65rem 1.25rem;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Grant Access</button>
+          <button onclick="adminCreateUser()" style="background:var(--rust);color:white;border:none;border-radius:9px;padding:0.65rem 1.25rem;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Create User</button>
         </div>
         <div id="inviteResult" style="margin-top:0.75rem;font-size:0.82rem;"></div>
       </div>
@@ -1893,6 +2003,7 @@ zone.addEventListener('drop', e => {
 async function runEstimate() {
   const desc = document.getElementById('description').value.trim();
   if (!desc && !imageBase64) { showToast('Please add a photo or description'); return; }
+  if (!checkEstPaywall()) return;
 
   const region = document.getElementById('region').value;
   const approach = document.getElementById('approach').value;
@@ -1949,6 +2060,9 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
     const parsed = JSON.parse(clean);
     currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: USER_ID };
     renderResults(currentEstimate);
+    incEstCount();
+    // Hide save prompt initially (shown by combined flow or after delay)
+    hideSavePrompt();
   } catch(err) {
     showError('Sorry — ' + (err.message || 'something went wrong. Please try again.'));
   } finally {
@@ -2684,6 +2798,9 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     document.getElementById('vizResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
     showToast('✨ Visualization complete!');
     setTimeout(showInstallBanner, 3000);
+
+    // Show save prompt after success
+    if (!vizModeEnabled) setTimeout(showSavePrompt, 1200);
 
     // Show upgrade prompt after success (skip for pro/admin)
     if (!isPro()) {
@@ -3858,6 +3975,200 @@ async function runHealthChecks() {
   // DB already shown as connected if we got here
   document.getElementById('healthDb').textContent = dbReady ? '● Connected' : '● Disconnected';
   document.getElementById('healthDb').style.color = dbReady ? 'var(--sage)' : 'var(--rust)';
+}
+
+
+// ─── VIZ TOGGLE MODE ──────────────────────────────────────────────────────────
+let vizModeEnabled = false;
+
+function toggleVizMode() {
+  vizModeEnabled = !vizModeEnabled;
+  const row = document.getElementById('vizToggleRow');
+  const btn = document.getElementById('submitBtn');
+  row.classList.toggle('active', vizModeEnabled);
+  btn.textContent = vizModeEnabled ? '✨ Get Estimate + Visualization' : '🔧 Get My Estimate';
+}
+
+// ─── ESTIMATE COUNT (5 free) ──────────────────────────────────────────────────
+function getEstCount() { return parseInt(localStorage.getItem('fixright_est_count') || '0'); }
+function incEstCount() { localStorage.setItem('fixright_est_count', getEstCount() + 1); }
+
+function checkEstPaywall() {
+  if (isPro()) return true;
+  if (getEstCount() < 5) return true;
+  showUpgradeModal('estimate');
+  return false;
+}
+
+// ─── SAVE PROMPT ──────────────────────────────────────────────────────────────
+function showSavePrompt() {
+  const el = document.getElementById('savePrompt');
+  if (el) { el.classList.add('visible'); }
+}
+function hideSavePrompt() {
+  const el = document.getElementById('savePrompt');
+  if (el) el.classList.remove('visible');
+}
+
+// ─── COMBINED VIZ RESULT ──────────────────────────────────────────────────────
+function showCombinedViz(beforeSrc, afterSrc) {
+  const panel = document.getElementById('combinedVizPanel');
+  document.getElementById('combinedVizBefore').src = beforeSrc;
+  document.getElementById('combinedVizAfter').src = afterSrc;
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openFullViz() {
+  // Switch to visualize tab and show the result
+  if (vizResultImageSrc) {
+    switchTab('visualize');
+    setTimeout(() => {
+      const vizResult = document.getElementById('vizResult');
+      if (vizResult) vizResult.classList.add('visible');
+    }, 300);
+  }
+}
+
+// ─── COMBINED RUN ESTIMATE + VIZ ──────────────────────────────────────────────
+async function runCombinedEstimate() {
+  // Run estimate first
+  await runEstimate();
+
+  // If viz mode enabled and estimate succeeded and user has photo
+  if (vizModeEnabled && currentEstimate && imageBase64) {
+    // Check viz paywall
+    if (!isPro() && getVizCount() >= 1) {
+      showToast('✨ Upgrade to Pro to visualize your estimates');
+      return;
+    }
+
+    // Use estimate description as viz prompt
+    const desc = document.getElementById('description').value.trim();
+    const vizPrompt = currentEstimate.title + '. ' + desc;
+
+    // Load photo into viz state
+    vizPhotoBase64 = imageBase64;
+    vizPhotoDataUrl = 'data:image/jpeg;base64,' + imageBase64;
+
+    // Run visualization in background
+    const loadingEl = document.getElementById('loading');
+    const tipEl = document.getElementById('loadingTip');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (tipEl) tipEl.textContent = '✨ Now generating visualization...';
+
+    try {
+      // Get edit prompt from Claude
+      let editPrompt = vizPrompt + '. Show the completed renovation photorealistically.';
+      try {
+        const pr = await fetch('/api/anthropic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 200,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+                { type: 'text', text: `Write a precise image editing instruction for this renovation: ${vizPrompt}. Start with "Edit this photo to...". Max 80 words. Return ONLY the instruction.` }
+              ]
+            }]
+          })
+        });
+        const pd = await pr.json();
+        if (pd.content?.[0]?.text) editPrompt = pd.content[0].text;
+      } catch(e) {}
+
+      // Call OpenAI
+      const imgResp = await fetch('/api/openai-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: editPrompt, imageBase64: imageBase64, size: '1024x1024' })
+      });
+      const imgData = await imgResp.json();
+
+      if (imgData.data?.[0]?.b64_json) {
+        vizResultImageSrc = 'data:image/png;base64,' + imgData.data[0].b64_json;
+        incVizCount();
+        // Show combined panel
+        showCombinedViz(vizPhotoDataUrl, vizResultImageSrc);
+        // Also store in current estimate for saving
+        if (currentEstimate) currentEstimate.vizImage = vizResultImageSrc;
+      }
+    } catch(e) {
+      console.error('Combined viz error:', e);
+    } finally {
+      if (loadingEl) loadingEl.style.display = 'none';
+    }
+  }
+
+  // Show save prompt after everything
+  setTimeout(showSavePrompt, 800);
+}
+
+// ─── ADMIN: CREATE USER ───────────────────────────────────────────────────────
+async function adminCreateUser() {
+  const email = document.getElementById('inviteEmail').value.trim();
+  const role = document.getElementById('inviteRole').value;
+  const result = document.getElementById('inviteResult');
+
+  if (!email) { result.innerHTML = '<span style="color:var(--rust)">Please enter an email</span>'; return; }
+  if (!email.includes('@')) { result.innerHTML = '<span style="color:var(--rust)">Invalid email address</span>'; return; }
+
+  result.innerHTML = '<span style="color:var(--muted)">Creating user...</span>';
+
+  try {
+    // Use Supabase admin API to create user
+    const resp = await fetch('https://zciyiltkaunbozoedfcr.supabase.co/auth/v1/admin/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI',
+        'Authorization': 'Bearer ' + (await getServiceKey())
+      },
+      body: JSON.stringify({
+        email: email,
+        password: generateTempPassword(),
+        email_confirm: true,
+        user_metadata: { role: role }
+      })
+    });
+
+    const data = await resp.json();
+
+    if (data.id) {
+      // Create profile entry
+      await db.from('profiles').upsert({
+        id: data.id, email: email, role: role
+      });
+      result.innerHTML = `<span style="color:var(--sage)">✓ User created! Temp password sent to ${email}. They can reset it on login.</span>`;
+      document.getElementById('inviteEmail').value = '';
+      loadAdminUsers();
+    } else {
+      result.innerHTML = `<span style="color:var(--rust)">Error: ${data.msg || data.message || JSON.stringify(data)}</span>`;
+    }
+  } catch(e) {
+    // Fallback — just upsert the profile so they get the role when they sign up
+    result.innerHTML = `<span style="color:var(--gold)">⚠ Direct creation needs service key. Role pre-assigned — user will get ${role} access when they sign up with ${email}</span>`;
+    await db.from('profiles').upsert({ id: crypto.randomUUID(), email: email, role: role });
+    loadAdminUsers();
+  }
+}
+
+async function getServiceKey() {
+  // Read service key from Supabase app_config if stored
+  try {
+    const r = await fetch('https://zciyiltkaunbozoedfcr.supabase.co/rest/v1/app_config?key=eq.supabase_service_key&select=value', {
+      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI' }
+    });
+    const d = await r.json();
+    return d?.[0]?.value || null;
+  } catch(e) { return null; }
+}
+
+function generateTempPassword() {
+  return 'FixRight-' + Math.random().toString(36).slice(2, 10) + '!';
 }
 
 </script>
