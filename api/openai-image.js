@@ -2,6 +2,28 @@ export const config = {
   api: { bodyParser: { sizeLimit: '10mb' } },
 };
 
+// Supabase credentials hardcoded — anon key is safe for reading config
+const SUPABASE_URL = 'https://zciyiltkaunbozoedfcr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI';
+
+async function getOpenAIKey() {
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/app_config?key=eq.openai_api_key&select=value`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
+    const data = await r.json();
+    return data?.[0]?.value || null;
+  } catch(e) {
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -10,8 +32,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+  const key = await getOpenAIKey();
+  if (!key) return res.status(500).json({ error: 'OpenAI key not found in config' });
 
   try {
     const { prompt, imageBase64, size = '1024x1024' } = req.body;
@@ -19,31 +41,23 @@ export default async function handler(req, res) {
     if (!imageBase64) return res.status(400).json({ error: 'imageBase64 required' });
 
     const imageBuffer = Buffer.from(imageBase64, 'base64');
-    const boundary = '----FixRightBoundary' + Date.now();
-
-    const textFields = [
-      { name: 'model', value: 'gpt-image-1' },
-      { name: 'prompt', value: prompt },
-      { name: 'n', value: '1' },
-      { name: 'size', value: size },
-    ];
+    const boundary = 'FixRightBoundary' + Date.now();
 
     const parts = [];
-    for (const { name, value } of textFields) {
-      parts.push(Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`,
-        'utf8'
-      ));
-    }
+    const addField = (name, value) => {
+      parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
+    };
 
-    parts.push(Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`,
-      'utf8'
-    ));
+    addField('model', 'gpt-image-1');
+    addField('prompt', prompt);
+    addField('n', '1');
+    addField('size', size);
+
+    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="photo.jpg"\r\nContent-Type: image/jpeg\r\n\r\n`));
     parts.push(imageBuffer);
-    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8'));
+    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
 
-    const fullBody = Buffer.concat(parts);
+    const body = Buffer.concat(parts);
 
     const response = await fetch('https://api.openai.com/v1/images/edits', {
       method: 'POST',
@@ -51,21 +65,11 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${key}`,
         'Content-Type': `multipart/form-data; boundary=${boundary}`,
       },
-      body: fullBody,
+      body,
     });
 
     const data = await response.json();
-    
-    if (!response.ok) {
-      // Return full error details
-      return res.status(response.status).json({ 
-        error: data.error || data,
-        status: response.status,
-        prompt_preview: prompt.slice(0, 100)
-      });
-    }
-
-    return res.status(200).json(data);
+    return res.status(response.status).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
