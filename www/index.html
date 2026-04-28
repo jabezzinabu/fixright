@@ -2019,6 +2019,8 @@ async function saveEstimate() {
     steps: currentEstimate.steps || [],
     warnings: currentEstimate.warnings || [],
     tip: currentEstimate.tip || '',
+    viz_image: vizResultImageSrc || null,
+    before_image: vizPhotoDataUrl || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null),
   };
 
   if (dbReady) {
@@ -2064,6 +2066,8 @@ async function loadSavedEstimates() {
         warnings: r.warnings,
         tip: r.tip,
         ts: new Date(r.created_at).getTime(),
+        vizImage: r.viz_image || null,
+        beforeImage: r.before_image || null,
       }));
       updateSavedCount(data.length);
       renderSavedList();
@@ -2136,9 +2140,45 @@ function renderSavedList() {
 function loadSaved(id) {
   const est = savedEstimates.find(x => String(x.id) === String(id));
   if (!est) return;
+
+  // Restore estimate result
   currentEstimate = est;
   renderResults(est);
   toggleDrawer(false);
+
+  // Restore before photo if saved
+  if (est.beforeImage) {
+    imageBase64 = est.beforeImage.split(',')[1] || null;
+    imageMediaType = 'image/jpeg';
+    const preview = document.getElementById('photoPreview');
+    preview.src = est.beforeImage;
+    preview.style.display = 'block';
+    document.getElementById('photoPlaceholder').style.display = 'none';
+    document.getElementById('photoClear').style.display = 'flex';
+  }
+
+  // Restore visualization if saved
+  if (est.vizImage) {
+    vizResultImageSrc = est.vizImage;
+    // Show viz result panel
+    const vizResult = document.getElementById('vizResult');
+    if (vizResult) {
+      const img = vizResult.querySelector('.viz-result-img') || vizResult.querySelector('img');
+      if (img) img.src = est.vizImage;
+      vizResult.classList.add('visible');
+    }
+    showToast('✓ Estimate + visualization restored');
+  } else {
+    showToast('✓ Estimate restored');
+  }
+
+  // Restore description
+  if (est.desc) document.getElementById('description').value = est.desc;
+
+  // Scroll to results
+  setTimeout(() => {
+    document.getElementById('resultCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
 }
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
