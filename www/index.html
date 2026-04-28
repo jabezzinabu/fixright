@@ -1281,7 +1281,7 @@
 <!-- APP TABS -->
 <div class="app-tabs">
   <button class="app-tab active" id="tabEstimate" onclick="switchTab('estimate')">🔧 Estimate</button>
-  <button class="app-tab" id="tabVisualize" onclick="switchTab('visualize')">
+  <button class="app-tab" id="tabVisualize" onclick="switchTab('visualize')" style="display:none">
     ✨ Visualize
     <span class="tab-badge">PRO</span>
   </button>
@@ -2427,9 +2427,10 @@ async function checkUserRole(user) {
 
 function grantSuperAdmin() {
   currentUser.role = 'admin';
-  // Show admin + discover tabs
+  // Show admin + discover + visualize tabs
   document.getElementById('tabAdmin').style.display = 'flex';
   document.getElementById('tabDiscover').style.display = 'flex';
+  document.getElementById('tabVisualize').style.display = 'flex';
 
   // Show admin badge on avatar
   document.getElementById('userAvatar').style.background = 'linear-gradient(135deg, var(--gold), #e8a820)';
@@ -2460,6 +2461,7 @@ function clearUser() {
   document.getElementById('userMenuWrap').style.display = 'none';
   document.getElementById('tabAdmin').style.display = 'none';
   document.getElementById('tabDiscover').style.display = 'none';
+  document.getElementById('tabVisualize').style.display = 'none';
   if (document.getElementById('sectionDiscover')?.classList.contains('active')) {
     switchTab('estimate');
   }
