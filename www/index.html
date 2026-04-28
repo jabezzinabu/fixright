@@ -2820,12 +2820,9 @@ Only list what you can clearly see was added or changed. Do not guess.`;
       if (deltaData.content?.[0]?.text) {
         const raw = deltaData.content[0].text.trim();
         // Extract just ADDED and CHANGED lines for the estimate
-        const addedMatch = raw.match(/ADDED:\s*(.+?)(?=
-|CHANGED:|EXISTING:|$)/s);
-        const changedMatch = raw.match(/CHANGED:\s*(.+?)(?=
-|EXISTING:|$)/s);
-        const existingMatch = raw.match(/EXISTING[^:]*:\s*(.+?)(?=
-|$)/s);
+        const addedMatch = raw.match(/ADDED:\s*([\s\S]+?)(?=\nCHANGED:|\nEXISTING:|$)/);
+        const changedMatch = raw.match(/CHANGED:\s*([\s\S]+?)(?=\nEXISTING:|$)/);
+        const existingMatch = raw.match(/EXISTING[^:]*:\s*([\s\S]+?)(?=\n[A-Z]|$)/);
 
         const added = addedMatch?.[1]?.trim() || '';
         const changed = changedMatch?.[1]?.trim() || '';
