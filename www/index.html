@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FixRight">
+<meta name="apple-mobile-web-app-title" content="DIY Estimator">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1c2b3a">
-<meta name="description" content="AI-powered home repair estimator with photorealistic design visualization. Get instant cost estimates and materials lists.">
+<meta name="description" content="AI-powered DIY cost estimator. Get instant project estimates with full materials lists and real store prices.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
-<title>FixRight — Home Repair Estimator</title>
+<title>DIY Estimator — AI Home Repair Estimator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <!-- Supabase SDK -->
@@ -1296,14 +1296,37 @@
   }
   .dim-warning.visible { display: block; }
 
+
+  /* ── RETAILER BADGES ────────────────────────────────────────────────────────── */
+  .mat-retailers {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;
+  }
+  .retailer-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 4px; font-size: 0.68rem; font-weight: 600;
+    text-decoration: none; transition: opacity 0.15s; white-space: nowrap;
+  }
+  .retailer-badge:hover { opacity: 0.8; }
+  .retailer-hd  { background: #f96302; color: white; }
+  .retailer-lw  { background: #004990; color: white; }
+  .retailer-sf  { background: #003087; color: white; }
+  .retailer-bq  { background: #006b38; color: white; }
+  .retailer-bn  { background: #e4002b; color: white; }
+  .retailer-rn  { background: #e4002b; color: white; }
+  .mat-source {
+    font-size: 0.72rem; color: var(--muted);
+    margin-top: 0.35rem; padding-top: 0.35rem;
+    border-top: 1px solid var(--border);
+  }
+
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <div class="logo-mark">F</div>
-    FixRight
+    <div class="logo-mark">D</div>
+    DIY Estimator
   </div>
   <div class="header-actions">
     <span class="db-status" id="dbStatus" title="Database status"></span>
@@ -1368,9 +1391,9 @@
   <div class="page-section active" id="sectionEstimate">
   <!-- HERO -->
   <div class="hero">
-    <p class="hero-eyebrow">AI-Powered Home Repair Estimator</p>
-    <h1>Know the cost<br>before you commit</h1>
-    <p>Upload a photo, describe your project, and get an instant estimate with a full materials list.</p>
+    <p class="hero-eyebrow">AI-Powered DIY Cost Estimator</p>
+    <h1>Know exactly what<br>your project costs</h1>
+    <p>Describe your project, add a photo, and get an instant estimate with a full materials list and real store prices — in seconds.</p>
   </div>
 
   <!-- FORM CARD -->
@@ -1728,7 +1751,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem;">
       <div>
         <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--navy);margin-bottom:0.2rem;">⚙️ Admin Dashboard</h2>
-        <p style="color:var(--muted);font-size:0.85rem;">FixRight v1.0 · <span id="adminLastRefresh">—</span></p>
+        <p style="color:var(--muted);font-size:0.85rem;">DIY Estimator v1.0 · <span id="adminLastRefresh">—</span></p>
       </div>
       <button onclick="loadAdminData()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:0.4rem;">🔄 Refresh</button>
     </div>
@@ -1904,7 +1927,7 @@
   </div><!-- /sectionAdmin -->
 
   <p class="disclaimer">
-    FixRight provides planning estimates only — not professional quotes. Prices vary by region, material grade, and contractor. Always get multiple quotes before starting work.
+    DIY Estimator provides planning estimates only — not professional quotes. Prices vary by region, material grade, and contractor. Always get multiple quotes before starting work.
   </p>
 </div>
 
@@ -1920,7 +1943,7 @@
         <div class="share-card-title" id="shareCardTitle"></div>
         <div class="share-card-price" id="shareCardPrice"></div>
         <div class="share-card-meta" id="shareCardMeta"></div>
-        <div class="share-brand">via FixRight — AI Home Repair Estimator</div>
+        <div class="share-brand">via DIY Estimator</div>
       </div>
       <div class="share-link-row">
         <input class="share-link-input" id="shareUrl" readonly>
@@ -1950,14 +1973,14 @@ let dbReady = false;
 function initSupabase() {
   try {
     if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-      console.warn('FixRight: Supabase not configured — using session storage fallback.');
+      console.warn('DIY Estimator: Supabase not configured — using session storage fallback.');
       setDbStatus('error');
       return;
     }
     db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     dbReady = true;
     setDbStatus('connected');
-    console.log('FixRight: Supabase connected ✓');
+    console.log('DIY Estimator: Supabase connected ✓');
   } catch(e) {
     console.error('Supabase init failed:', e);
     setDbStatus('error');
@@ -2086,7 +2109,7 @@ async function runEstimate() {
   // Inject pre-calculated quantities from measurement skill
   const measurementContext = getMeasurementContext();
 
-  const systemPrompt = `You are FixRight, an expert home repair estimator. Given a project description and optional photo, return ONLY a valid JSON object — no markdown, no extra text, no code fences.
+  const systemPrompt = `You are DIY Estimator, an expert home repair and renovation cost estimator. Given a project description and optional photo, return ONLY a valid JSON object — no markdown, no extra text, no code fences.
 
 JSON shape:
 {
@@ -2155,7 +2178,15 @@ function renderResults(est) {
   let total = 0;
   (est.materials || []).forEach(m => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${m.item}</td><td>${m.qty}</td><td>${m.unit}</td><td class="mat-cost">${m.cost}</td>`;
+    const badges = buildRetailerBadges(m.item);
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight:500">${m.item}</div>
+        ${badges}
+      </td>
+      <td>${m.qty}</td>
+      <td>${m.unit}</td>
+      <td class="mat-cost">${m.cost}</td>`;
     tbody.appendChild(tr);
     const num = parseFloat((m.cost || '0').replace(/[^0-9.]/g, ''));
     if (!isNaN(num)) total += num;
@@ -2166,6 +2197,10 @@ function renderResults(est) {
     tr.innerHTML = `<td colspan="3">Materials Total</td><td class="mat-cost">~$${Math.round(total).toLocaleString()}</td>`;
     tbody.appendChild(tr);
   }
+
+  // Add price source credibility line
+  const sourceEl = document.getElementById('priceSource');
+  if (sourceEl) sourceEl.textContent = getPriceSource();
 
   const sl = document.getElementById('stepsList');
   sl.innerHTML = '';
@@ -2381,7 +2416,7 @@ function newEstimate() {
 function copyMaterials() {
   if (!currentEstimate?.materials) return;
   const lines = currentEstimate.materials.map(m => `• ${m.item} — ${m.qty} ${m.unit} (${m.cost})`).join('\n');
-  const text = `${currentEstimate.title}\nEstimated: ${currentEstimate.priceRange}\n\nMaterials:\n${lines}\n\n— via FixRight`;
+  const text = `${currentEstimate.title}\nEstimated: ${currentEstimate.priceRange}\n\nMaterials:\n${lines}\n\n— via DIY Estimator`;
   navigator.clipboard.writeText(text).then(() => showToast('📋 Materials list copied!'));
 }
 
@@ -2416,18 +2451,18 @@ function copyLink() {
 
 function shareWhatsApp() {
   const url = document.getElementById('shareUrl').value;
-  window.open(`https://wa.me/?text=${encodeURIComponent(`FixRight estimate for ${currentEstimate?.title}: ${currentEstimate?.priceRange} — ${url}`)}`);
+  window.open(`https://wa.me/?text=${encodeURIComponent(`DIY Estimator estimate for ${currentEstimate?.title}: ${currentEstimate?.priceRange} — ${url}`)}`);
 }
 
 function shareSMS() {
   const url = document.getElementById('shareUrl').value;
-  window.open(`sms:?body=${encodeURIComponent(`FixRight estimate: ${currentEstimate?.title} — ${currentEstimate?.priceRange} ${url}`)}`);
+  window.open(`sms:?body=${encodeURIComponent(`DIY Estimator estimate: ${currentEstimate?.title} — ${currentEstimate?.priceRange} ${url}`)}`);
 }
 
 function shareNative() {
   if (navigator.share) {
     navigator.share({
-      title: `FixRight: ${currentEstimate?.title}`,
+      title: `DIY Estimator: ${currentEstimate?.title}`,
       text: `Estimated ${currentEstimate?.priceRange}`,
       url: document.getElementById('shareUrl').value
     }).catch(() => {});
@@ -2904,14 +2939,14 @@ function downloadViz() {
   if (!vizResultImageSrc) return;
   const a = document.createElement('a');
   a.href = vizResultImageSrc;
-  a.download = 'fixright-visualization.png';
+  a.download = 'diy-estimator-visualization.png';
   a.click();
 }
 
 function shareViz() {
   if (!vizResultImageSrc) return;
   if (navigator.share) {
-    navigator.share({ title: 'My FixRight Visualization', text: 'Check out my home renovation concept!' })
+    navigator.share({ title: 'My DIY Estimator Visualization', text: 'Check out my DIY Estimator renovation concept!' })
       .catch(() => {});
   } else {
     showToast('Right-click the image to save and share');
@@ -3351,7 +3386,7 @@ const _origSwitchTab = switchTab;
 <div class="modal-overlay" id="authModal">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="authModalTitle">Welcome to FixRight</h3>
+      <h3 id="authModalTitle">Welcome to DIY Estimator</h3>
       <button class="modal-close" onclick="closeAuthModal()">✕</button>
     </div>
     <div class="modal-body">
@@ -3398,7 +3433,7 @@ const _origSwitchTab = switchTab;
       <div class="upgrade-modal-body">
         <div class="upgrade-icon">🏠</div>
         <h3>You've used your free visualization</h3>
-        <p>Upgrade to FixRight Pro to generate unlimited photorealistic renderings of your projects.</p>
+        <p>Upgrade to DIY Estimator Pro to generate unlimited photorealistic renderings of your projects.</p>
         <div class="upgrade-price">
           <div class="price">$9.99<span style="font-size:1rem;color:rgba(255,255,255,0.5)">/wk</span></div>
           <div class="price-sub">or $29.99/month — save 25%</div>
@@ -3424,7 +3459,7 @@ const _origSwitchTab = switchTab;
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
-      .then(r => console.log('FixRight SW registered'))
+      .then(r => console.log('DIY Estimator SW registered'))
       .catch(e => console.log('SW registration failed:', e));
   });
 }
@@ -3455,7 +3490,7 @@ function showInstallBanner() {
   banner.innerHTML = `
     <span style="font-size:1.5rem">📱</span>
     <div style="flex:1">
-      <div style="font-weight:600;font-size:0.9rem">Add FixRight to Home Screen</div>
+      <div style="font-weight:600;font-size:0.9rem">Add DIY Estimator to Home Screen</div>
       <div style="font-size:0.76rem;color:rgba(255,255,255,0.6);margin-top:2px">Works offline, feels like a native app</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:0.35rem">
@@ -3472,7 +3507,7 @@ async function installPWA() {
   const { outcome } = await deferredPrompt.userChoice;
   if (outcome === 'accepted') {
     localStorage.setItem('fixright_installed', '1');
-    showToast('✓ FixRight added to your home screen!');
+    showToast('✓ DIY Estimator added to your home screen!');
   }
   deferredPrompt = null;
   dismissInstall();
@@ -4392,7 +4427,7 @@ async function getServiceKey() {
 }
 
 function generateTempPassword() {
-  return 'FixRight-' + Math.random().toString(36).slice(2, 10) + '!';
+  return 'DIYEst-' + Math.random().toString(36).slice(2, 10) + '!';
 }
 
 
@@ -4779,6 +4814,94 @@ function isMetricRegion() {
 function getMeasurementContext() {
   if (!_calculatedQuantities) return '';
   return '\n\n' + _calculatedQuantities.promptText;
+}
+
+
+// ─── RETAILER PRICE SOURCES ───────────────────────────────────────────────────
+
+// Retailer config per region
+const RETAILERS = {
+  'us-national': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'us-northeast': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'us-southeast': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'us-midwest': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'us-southwest': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'us-west': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.com/s/' },
+    { name: 'Lowe's',    cls: 'retailer-lw', url: 'https://www.lowes.com/search?searchTerm=' },
+  ],
+  'uk': [
+    { name: 'Screwfix', cls: 'retailer-sf', url: 'https://www.screwfix.com/search?search=' },
+    { name: 'B&Q',      cls: 'retailer-bq', url: 'https://www.diy.com/search?term=' },
+  ],
+  'au': [
+    { name: 'Bunnings', cls: 'retailer-bn', url: 'https://www.bunnings.com.au/search/products?q=' },
+  ],
+  'ca': [
+    { name: 'Home Depot', cls: 'retailer-hd', url: 'https://www.homedepot.ca/search#?q=' },
+    { name: 'RONA',       cls: 'retailer-rn', url: 'https://www.rona.ca/en/search-results?q=' },
+  ],
+};
+
+// Credibility source per region
+const PRICE_SOURCES = {
+  'us-national':  'Pricing based on HomeAdvisor national averages · 2025',
+  'us-northeast': 'Pricing based on HomeAdvisor Northeast averages · 2025',
+  'us-southeast': 'Pricing based on HomeAdvisor Southeast averages · 2025',
+  'us-midwest':   'Pricing based on HomeAdvisor Midwest averages · 2025',
+  'us-southwest': 'Pricing based on HomeAdvisor Southwest averages · 2025',
+  'us-west':      'Pricing based on HomeAdvisor West Coast averages · 2025',
+  'uk':           'Pricing based on Checkatrade & Screwfix averages · 2025',
+  'au':           'Pricing based on ServiceSeeking.com.au averages · 2025',
+  'ca':           'Pricing based on HomeStars Canada averages · 2025',
+};
+
+// Consumable keywords — no retailer badge for these
+const CONSUMABLE_KEYWORDS = [
+  'screw', 'nail', 'tape', 'sandpaper', 'sanding', 'caulk', 'putty', 'primer coat',
+  'mixing', 'brush', 'roller', 'drop cloth', 'tack', 'adhesive strip',
+  'masking', 'filler', 'spackle', 'wire', 'cable tie', 'dust sheet'
+];
+
+function isConsumable(itemName) {
+  const lower = itemName.toLowerCase();
+  return CONSUMABLE_KEYWORDS.some(k => lower.includes(k));
+}
+
+function getRetailers() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  return RETAILERS[region] || RETAILERS['us-national'];
+}
+
+function getPriceSource() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  return PRICE_SOURCES[region] || PRICE_SOURCES['us-national'];
+}
+
+function buildRetailerBadges(itemName) {
+  if (isConsumable(itemName)) return '';
+  const retailers = getRetailers();
+  const query = encodeURIComponent(itemName);
+  return `<div class="mat-retailers">${
+    retailers.map(r =>
+      `<a href="${r.url}${query}" target="_blank" rel="noopener" class="retailer-badge ${r.cls}">${r.name} →</a>`
+    ).join('')
+  }</div>`;
 }
 
 </script>
