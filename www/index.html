@@ -4101,9 +4101,11 @@ function getEstCount() { return parseInt(localStorage.getItem('fixright_est_coun
 function incEstCount() { localStorage.setItem('fixright_est_count', getEstCount() + 1); }
 
 function checkEstPaywall() {
+  // Admins and Pro users always bypass
   if (isPro()) return true;
+  if (isAdmin && isAdmin()) return true;
   if (getEstCount() < 5) return true;
-  showUpgradeModal('estimate');
+  showUpgradeModal();
   return false;
 }
 
