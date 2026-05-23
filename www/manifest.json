@@ -1,15 +1,70 @@
 {
   "name": "DIY Estimator",
   "short_name": "DIY Estimator",
-  "description": "AI-powered DIY cost estimator with materials lists and real store prices",
+  "id": "/",
+  "description": "AI-powered DIY cost estimator. Get instant project estimates with full materials lists and real store prices in seconds.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f5f0e8",
   "theme_color": "#1c2b3a",
+  "lang": "en",
+  "categories": ["utilities", "productivity", "lifestyle"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "icon-512.svg", "sizes": "512x512", "type": "image/svg+xml" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/estimate.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Get instant AI estimates with full materials lists and store prices"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Estimate results with materials, costs and store links"
+    },
+    {
+      "src": "/screenshots/discover.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Discover design inspirations for every room"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Estimate",
+      "short_name": "Estimate",
+      "description": "Start a new project estimate",
+      "url": "/?action=estimate",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

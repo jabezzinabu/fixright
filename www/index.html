@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="DIY Estimator">
@@ -1344,6 +1344,36 @@
     border-radius: 99px; font-size: 0.8rem; backdrop-filter: blur(4px);
   }
   .combined-viz-side img { cursor: zoom-in; }
+
+
+  /* ── APP FEEL ────────────────────────────────────────────────────────────────── */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Allow text selection in inputs and textareas */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  /* Prevent double-tap zoom on buttons */
+  button, a, .app-tab, .discover-card, .stat-card {
+    touch-action: manipulation;
+  }
+  /* Smooth momentum scrolling on scrollable containers */
+  .page-section, .admin-table-wrap, .discover-cats, .saved-list {
+    -webkit-overflow-scrolling: touch;
+  }
 
 </style>
 </head>
