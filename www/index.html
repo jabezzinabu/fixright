@@ -602,52 +602,58 @@
   /* ── BOTTOM NAV BAR ─────────────────────────────────────────────────────────── */
   .app-tabs {
     background: var(--navy);
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255,255,255,0.12);
     display: flex;
-    align-items: stretch;
+    align-items: flex-start;
     position: fixed;
     bottom: 0;
     left: 0; right: 0;
     z-index: 200;
-    padding-bottom: var(--safe-bottom);
-    box-shadow: 0 -2px 16px rgba(0,0,0,0.25);
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -1px 12px rgba(0,0,0,0.3);
   }
   .app-tab {
     flex: 1;
-    padding: 0.6rem 0.25rem 0.5rem;
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: rgba(255,255,255,0.45);
+    padding: 8px 4px 0;
+    color: rgba(255,255,255,0.4);
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.2s;
     background: none;
     font-family: 'DM Sans', sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     touch-action: manipulation;
     min-width: 0;
+    position: relative;
   }
-  .app-tab:hover { color: rgba(255,255,255,0.75); }
+  .app-tab:hover { color: rgba(255,255,255,0.7); }
   .app-tab.active { color: var(--gold); }
-  .tab-icon { font-size: 1.25rem; line-height: 1; }
-  .tab-label { font-size: 0.65rem; font-weight: 500; white-space: nowrap; }
+  .tab-icon { font-size: 1.2rem; line-height: 1; display: block; }
+  .tab-label { font-size: 0.62rem; font-weight: 500; white-space: nowrap; display: block; }
+  .app-tab.active .tab-icon { transform: scale(1.1); }
   .app-tab.active .tab-label { font-weight: 700; }
+  /* Badge — small dot in top-right of icon area */
   .app-tab .tab-badge {
-    background: var(--gold); color: var(--navy);
-    font-size: 0.55rem; font-weight: 700;
-    padding: 1px 5px; border-radius: 99px;
-    letter-spacing: 0.04em;
     position: absolute;
-    top: 6px;
-    margin-left: 14px;
+    top: 5px;
+    right: calc(50% - 18px);
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 0.5rem;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 99px;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
   }
 
   /* ── PAGE SECTIONS ────────────────────────────────────────────────────────── */
   .page-section { display: none; }
-  .page-section.active { display: block; padding-bottom: calc(70px + var(--safe-bottom)); }
+  .page-section.active { display: block; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── VISUALIZE SECTION ────────────────────────────────────────────────────── */
   .viz-hero {
