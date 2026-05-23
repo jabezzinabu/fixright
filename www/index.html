@@ -1319,6 +1319,32 @@
     border-top: 1px solid var(--border);
   }
 
+
+  /* ── LIGHTBOX ───────────────────────────────────────────────────────────────── */
+  .lightbox-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    cursor: zoom-out;
+  }
+  .lightbox-overlay.open { opacity: 1; pointer-events: all; }
+  .lightbox-overlay img {
+    max-width: 95vw; max-height: 90vh; object-fit: contain;
+    border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 16px;
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    width: 36px; height: 36px; border-radius: 50%; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .lightbox-label {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.6); color: white; padding: 4px 14px;
+    border-radius: 99px; font-size: 0.8rem; backdrop-filter: blur(4px);
+  }
+  .combined-viz-side img { cursor: zoom-in; }
+
 </style>
 </head>
 <body>
@@ -1485,12 +1511,12 @@
     <div class="combined-viz-panel" id="combinedVizPanel">
       <div class="combined-viz-before-after">
         <div class="combined-viz-side">
-          <img id="combinedVizBefore" src="" alt="Before">
-          <div class="combined-viz-badge">Before</div>
+          <img id="combinedVizBefore" src="" alt="Before" onclick="openLightbox(this.src,'Before')">
+          <div class="combined-viz-badge">Before ⤢</div>
         </div>
         <div class="combined-viz-side">
-          <img id="combinedVizAfter" src="" alt="After">
-          <div class="combined-viz-badge">After</div>
+          <img id="combinedVizAfter" src="" alt="After" onclick="openLightbox(this.src,'After — AI Visualization')">
+          <div class="combined-viz-badge">After ⤢</div>
         </div>
       </div>
       <!-- VIZ LOADING STATE -->
@@ -1520,7 +1546,10 @@
       <div class="result-header">
         <div class="result-title" id="resultTitle"></div>
         <div class="price-row">
-          <div class="price-range" id="resultPrice"></div>
+          <div>
+            <div class="price-range" id="resultPrice"></div>
+            <div class="mat-source" id="priceSource"></div>
+          </div>
           <div>
             <div class="price-label">estimated cost</div>
             <div style="display:flex;gap:0.5rem;margin-top:0.4rem;flex-wrap:wrap;">
@@ -2157,8 +2186,9 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
     const parsed = JSON.parse(clean);
     currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: USER_ID };
     renderResults(currentEstimate);
-    // Hide save prompt initially (shown by combined flow or after delay)
     hideSavePrompt();
+    // Auto-prompt install after first estimate
+    maybeAutoPromptInstall();
   } catch(err) {
     showError('Sorry — ' + (err.message || 'something went wrong. Please try again.'));
   } finally {
@@ -2169,7 +2199,10 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 function renderResults(est) {
   document.getElementById('resultTitle').textContent = est.title || 'Project Estimate';
-  document.getElementById('resultPrice').textContent = est.priceRange || '';
+  // Fix currency symbol in price range
+  const sym = getCurrencySymbol();
+  const priceRange = (est.priceRange || '').replace(/\$/g, sym);
+  document.getElementById('resultPrice').textContent = priceRange;
   document.getElementById('resultDifficulty').textContent = '⚡ ' + (est.difficulty || '');
   document.getElementById('resultTimeline').textContent = '⏱ ' + (est.timeline || '');
 
@@ -2194,7 +2227,8 @@ function renderResults(est) {
   if (total > 0) {
     const tr = document.createElement('tr');
     tr.className = 'mat-total-row';
-    tr.innerHTML = `<td colspan="3">Materials Total</td><td class="mat-cost">~$${Math.round(total).toLocaleString()}</td>`;
+    const sym = getCurrencySymbol();
+    tr.innerHTML = `<td colspan="3">Materials Total</td><td class="mat-cost">~${sym}${Math.round(total).toLocaleString()}</td>`;
     tbody.appendChild(tr);
   }
 
@@ -3398,7 +3432,15 @@ const _origSwitchTab = switchTab;
       <div class="auth-success" id="authSuccess"></div>
       <div class="auth-form">
         <input type="email" id="authEmail" placeholder="Email address">
-        <input type="password" id="authPassword" placeholder="Password">
+        <input type="password" id="authPassword" placeholder="Password" id="authPassword">
+        <div id="forgotRow" style="text-align:right;margin-top:-0.25rem;margin-bottom:0.25rem;">
+          <button onclick="showForgotPassword()" style="background:none;border:none;color:var(--rust);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;">Forgot password?</button>
+        </div>
+        <div id="forgotForm" style="display:none;">
+          <input type="email" id="forgotEmail" placeholder="Enter your email address" style="margin-bottom:0.5rem;">
+          <button class="btn-auth" onclick="sendPasswordReset()" style="background:var(--sage);">Send Reset Link</button>
+          <button onclick="hideForgotPassword()" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.35rem;width:100%;text-align:center;">← Back to Sign In</button>
+        </div>
         <button class="btn-auth" id="authSubmitBtn" onclick="submitAuth()">Sign In</button>
       </div>
       <div class="auth-divider">or continue with</div>
@@ -4875,9 +4917,8 @@ const PRICE_SOURCES = {
 
 // Consumable keywords — no retailer badge for these
 const CONSUMABLE_KEYWORDS = [
-  'screw', 'nail', 'tape', 'sandpaper', 'sanding', 'caulk', 'putty', 'primer coat',
-  'mixing', 'brush', 'roller', 'drop cloth', 'tack', 'adhesive strip',
-  'masking', 'filler', 'spackle', 'wire', 'cable tie', 'dust sheet'
+  'sandpaper', 'drop cloth', 'masking tape', 'cable tie', 'dust sheet',
+  'mixing bucket', 'stir stick', 'painters tape'
 ];
 
 function isConsumable(itemName) {
@@ -4888,6 +4929,23 @@ function isConsumable(itemName) {
 function getRetailers() {
   const region = document.getElementById('region')?.value || 'us-national';
   return RETAILERS[region] || RETAILERS['us-national'];
+}
+
+
+function getCurrencySymbol() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  if (region === 'uk') return '£';
+  if (region === 'au') return 'A$';
+  if (region === 'ca') return 'CA$';
+  return '$';
+}
+
+function getCurrencyLocale() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  if (region === 'uk') return 'en-GB';
+  if (region === 'au') return 'en-AU';
+  if (region === 'ca') return 'en-CA';
+  return 'en-US';
 }
 
 function getPriceSource() {
@@ -4905,6 +4963,61 @@ function buildRetailerBadges(itemName) {
     ).join('')
   }</div>`;
 }
+
+
+// ─── FORGOT PASSWORD ──────────────────────────────────────────────────────────
+function showForgotPassword() {
+  document.getElementById('forgotForm').style.display = 'block';
+  document.getElementById('authPassword').style.display = 'none';
+  document.getElementById('forgotRow').style.display = 'none';
+  document.getElementById('authSubmitBtn').style.display = 'none';
+  const email = document.getElementById('authEmail').value;
+  if (email) document.getElementById('forgotEmail').value = email;
+}
+
+function hideForgotPassword() {
+  document.getElementById('forgotForm').style.display = 'none';
+  document.getElementById('authPassword').style.display = 'block';
+  document.getElementById('forgotRow').style.display = 'block';
+  document.getElementById('authSubmitBtn').style.display = 'block';
+  document.getElementById('authError').textContent = '';
+  document.getElementById('authSuccess').textContent = '';
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) { document.getElementById('authError').textContent = 'Please enter your email address'; return; }
+  const errEl = document.getElementById('authError');
+  const succEl = document.getElementById('authSuccess');
+  errEl.textContent = '';
+  succEl.textContent = 'Sending...';
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/?reset=1'
+    });
+    if (error) throw error;
+    succEl.textContent = '✓ Reset link sent — check your email';
+    errEl.textContent = '';
+    setTimeout(hideForgotPassword, 3000);
+  } catch(e) {
+    errEl.textContent = e.message || 'Could not send reset email';
+    succEl.textContent = '';
+  }
+}
+
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
+function openLightbox(src, label) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxLabel').textContent = label || '';
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
 </script>
 
@@ -4947,6 +5060,14 @@ function buildRetailerBadges(itemName) {
     </button>
     <p class="sheet-hint">Upload your photo → AI applies this style to your actual room → get a cost estimate</p>
   </div>
+</div>
+
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+  <div class="lightbox-label" id="lightboxLabel"></div>
 </div>
 
 </body>
