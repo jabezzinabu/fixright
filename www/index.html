@@ -19,7 +19,7 @@
 <style>
   :root {
     --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 16px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
     --cream: #f5f0e8;
     --cream-dark: #ede6d6;
     --navy: #1c2b3a;
@@ -1437,14 +1437,14 @@
   <button class="app-tab active" id="tabEstimate" onclick="switchTab('estimate')">🔧 Estimate</button>
   <button class="app-tab" id="tabVisualize" onclick="switchTab('visualize')" style="display:none">
     ✨ Visualize
-    <span class="tab-badge">PRO</span>
+    
   </button>
   <button class="app-tab" id="tabDiscover" onclick="switchTab('discover')" style="display:none">
     🌟 Discover
   </button>
   <button class="app-tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">
     ⚙️ Admin
-    <span class="tab-badge admin-tab-badge">SUPER</span>
+    
   </button>
 </div>
 
