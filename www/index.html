@@ -3045,10 +3045,62 @@ function showUpgradeModal() {
 function closeUpgradeModal() {
   document.getElementById('upgradeModal').classList.remove('open');
 }
-function goUpgrade() {
-  // Placeholder — replace with Stripe payment link when ready
-  showToast('3-day free trial — Stripe coming soon!');
-  closeUpgradeModal();
+async function goUpgrade(plan) {
+  if (!currentUser) {
+    showToast('Please sign in first to start your free trial');
+    closeUpgradeModal();
+    showAuthModal();
+    return;
+  }
+
+  const btn = document.querySelector('.btn-upgrade');
+  if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+
+  try {
+    // Get price IDs from Supabase
+    const weeklyId = await getStripeConfig('stripe_price_weekly');
+    const monthlyId = await getStripeConfig('stripe_price_monthly');
+    const priceId = (plan === 'monthly') ? monthlyId : weeklyId;
+
+    if (!priceId) {
+      showToast('Payment setup error — please contact support');
+      if (btn) { btn.textContent = 'Start Free Trial — 3 Days Free'; btn.disabled = false; }
+      return;
+    }
+
+    const resp = await fetch('/api/stripe-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        priceId,
+        userId: currentUser.id,
+        email: currentUser.email,
+        plan: plan || 'weekly'
+      })
+    });
+
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || 'Could not create checkout session');
+    }
+  } catch(e) {
+    showToast('Error: ' + e.message);
+    if (btn) { btn.textContent = 'Start Free Trial — 3 Days Free'; btn.disabled = false; }
+  }
+}
+
+async function getStripeConfig(key) {
+  try {
+    const r = await fetch(`https://zciyiltkaunbozoedfcr.supabase.co/rest/v1/app_config?key=eq.${key}&select=value`, {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI'
+      }
+    });
+    const d = await r.json();
+    return d?.[0]?.value || null;
+  } catch(e) { return null; }
 }
 
 // ─── VIZ UI HELPERS ───────────────────────────────────────────────────────────
@@ -3538,8 +3590,14 @@ const _origSwitchTab = switchTab;
           <div class="upgrade-feature">Share estimates with contractors</div>
           <div class="upgrade-feature">ZIP-code level pricing</div>
         </div>
-        <button class="btn-upgrade" onclick="goUpgrade()">Start Free Trial — 3 Days Free</button>
-        <br>
+        <button class="btn-upgrade" onclick="goUpgrade('weekly')" style="width:100%;margin-bottom:0.5rem;">
+          Start Free Trial — 3 Days Free
+          <span style="display:block;font-size:0.78rem;opacity:0.8;font-weight:400;margin-top:2px;">then $9.99/week · cancel anytime</span>
+        </button>
+        <button onclick="goUpgrade('monthly')" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1.5px solid rgba(255,255,255,0.2);border-radius:9px;padding:0.75rem;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;margin-bottom:0.75rem;">
+          Monthly — $29.99/mo
+          <span style="display:block;font-size:0.75rem;opacity:0.7;font-weight:400;margin-top:2px;">Save 25% · includes 3-day free trial</span>
+        </button>
         <button class="btn-upgrade-skip" onclick="closeUpgradeModal()">Maybe later</button>
       </div>
     </div>
@@ -5157,6 +5215,34 @@ async function trackAnonymousEstimate() {
     // Increment via RPC if available, otherwise just log
     await db.rpc('increment_estimate_count', { p_date: today }).catch(() => {});
   } catch(e) { /* silent fail */ }
+}
+
+
+// ─── STRIPE REDIRECT HANDLER ─────────────────────────────────────────────────
+function checkStripeRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const stripeStatus = params.get('stripe');
+  if (stripeStatus === 'success') {
+    // Clean URL
+    window.history.replaceState({}, document.title, '/');
+    // Show success message — role will be updated via webhook
+    setTimeout(() => {
+      showToast('🎉 Welcome to Pro! Your account will be activated shortly.');
+      // Refresh user role
+      if (db && currentUser) {
+        db.from('profiles').select('role').eq('id', currentUser.id).single()
+          .then(({ data }) => {
+            if (data?.role) {
+              currentUser.role = data.role;
+              grantSuperAdmin();
+            }
+          });
+      }
+    }, 1000);
+  } else if (stripeStatus === 'cancel') {
+    window.history.replaceState({}, document.title, '/');
+    showToast('Checkout cancelled — no charge made');
+  }
 }
 
 </script>
