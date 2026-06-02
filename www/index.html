@@ -1466,7 +1466,7 @@
   <!-- HERO -->
   <div class="hero">
     <p class="hero-eyebrow">AI-Powered DIY Cost Estimator</p>
-    <h1>Know exactly what<br>your project costs</h1>
+    <h1>Instant estimates for<br>your next project</h1>
     <p>Describe your project, add a photo, and get an instant estimate with a full materials list and real store prices — in seconds.</p>
   </div>
 
@@ -4391,14 +4391,34 @@ Rules:
       loading.style.display = 'none';
       actions.style.display = 'flex';
     } else {
-      throw new Error(imgData.error || 'No image returned');
+      // Extract error message properly regardless of format
+      let errMsg = 'No image returned';
+      if (imgData.error) {
+        errMsg = typeof imgData.error === 'string' ? imgData.error
+          : imgData.error.message || imgData.error.code || JSON.stringify(imgData.error);
+      } else if (imgData.message) {
+        errMsg = imgData.message;
+      }
+      console.error('OpenAI image error:', JSON.stringify(imgData));
+      throw new Error(errMsg);
     }
 
   } catch(e) {
     loading.style.display = 'none';
     panel.classList.remove('visible');
-    showToast('Visualization failed — ' + (e.message || 'please try again'));
-    console.error('Viz error:', e);
+    const errMsg = e.message || 'please try again';
+    showToast('Visualization failed — ' + errMsg);
+    // Show error in panel too
+    const panel2 = document.getElementById('combinedVizPanel');
+    if (panel2) {
+      panel2.classList.add('visible');
+      panel2.innerHTML = `<div style="padding:1.25rem;background:var(--cream);border-radius:12px;border:1px solid var(--border);">
+        <div style="color:var(--rust);font-weight:600;margin-bottom:0.5rem;">⚠ Visualization failed</div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">${errMsg}</div>
+        <button onclick="generateCombinedViz()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:0.6rem 1.25rem;font-size:0.85rem;cursor:pointer;font-family:'DM Sans',sans-serif;">Try Again</button>
+      </div>`;
+    }
+    console.error('Viz error full:', e);
   }
 }
 
