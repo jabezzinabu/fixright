@@ -2310,7 +2310,8 @@ function renderResults(est) {
 
 // ─── SUPABASE SAVE / LOAD ─────────────────────────────────────────────────────
 async function saveEstimate() {
-  if (!currentEstimate) return;
+  if (!currentEstimate) { showToast('Nothing to save yet'); return; }
+  if (!currentUser) { showToast('Please sign in to save estimates'); showAuthModal(); return; }
 
   const row = {
     user_id: USER_ID,
