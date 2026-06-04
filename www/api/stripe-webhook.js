@@ -39,32 +39,30 @@ async function verifyStripeSignature(payload, signature, secret) {
 
 async function updateUserRole(userId, email, role) {
   const serviceKey = await getConfig('supabase_service_key') || SUPABASE_ANON_KEY;
-  
-  // Update by user_id
+  const headers = {
+    'apikey': serviceKey,
+    'Authorization': `Bearer ${serviceKey}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'resolution=merge-duplicates,return=minimal'
+  };
+
+  // Upsert by user_id — creates profile if doesn't exist
   if (userId) {
-    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': serviceKey,
-        'Authorization': `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ role })
+    const body = { id: userId, role };
+    if (email) body.email = email;
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
     });
   }
-  
-  // Also try by email as fallback
-  if (email) {
-    await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': serviceKey,
-        'Authorization': `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ role })
+
+  // Also upsert by email as fallback
+  if (email && !userId) {
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ email, role })
     });
   }
 }

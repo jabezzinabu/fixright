@@ -2614,7 +2614,12 @@ async function checkUserRole(user) {
   // Check DB profile for pro role
   if (dbReady) {
     try {
-      const { data } = await db.from('profiles').select('role').eq('id', user.id).single();
+      const { data, error } = await db.from('profiles').select('role').eq('id', user.id).single();
+      if (error || !data) {
+        // No profile row — create one
+        await db.from('profiles').upsert({ id: user.id, email: user.email, role: 'free' });
+        return;
+      }
       if (data?.role === 'admin') { grantSuperAdmin(); return; }
       if (data?.role === 'pro') { grantPro(); return; }
     } catch(e) { /* profiles table may not exist yet */ }
