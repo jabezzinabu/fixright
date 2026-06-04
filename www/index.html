@@ -1393,6 +1393,16 @@
     touch-action: manipulation;
   }
 
+
+  .period-btn {
+    background: none; border: 1.5px solid var(--border); color: var(--muted);
+    border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+  }
+  .period-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+  .period-btn:hover:not(.active) { border-color: var(--navy); color: var(--navy); }
+  @media (max-width: 700px) { #analyticsCards { grid-template-columns: repeat(2,1fr) !important; } }
+
 </style>
 </head>
 <body>
@@ -1833,27 +1843,71 @@
       <button onclick="loadAdminData()" style="background:var(--navy);color:white;border:none;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:0.4rem;">🔄 Refresh</button>
     </div>
 
-    <!-- STATS GRID -->
-    <div class="stat-grid" id="adminStats" style="margin-bottom:1.75rem;">
-      <div class="stat-card highlight">
-        <div class="stat-label">Total Users</div>
-        <div class="stat-value" id="statUsers">—</div>
-        <div class="stat-sub">registered accounts</div>
+    <!-- ANALYTICS SECTION -->
+    <div class="admin-section" style="margin-bottom:1.75rem;">
+      <div class="admin-section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <span>📊 Analytics</span>
+        <div style="display:flex;gap:0.4rem;">
+          <button onclick="setAnalyticsPeriod('today')" id="periodToday" class="period-btn active">Today</button>
+          <button onclick="setAnalyticsPeriod('7d')" id="period7d" class="period-btn">7 days</button>
+          <button onclick="setAnalyticsPeriod('30d')" id="period30d" class="period-btn">30 days</button>
+          <button onclick="setAnalyticsPeriod('all')" id="periodAll" class="period-btn">All time</button>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Estimates</div>
-        <div class="stat-value" id="statEstimates">—</div>
-        <div class="stat-sub">all time</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">This Week</div>
-        <div class="stat-value" id="statWeek">—</div>
-        <div class="stat-sub">new estimates</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Pro Users</div>
-        <div class="stat-value" id="statPro">—</div>
-        <div class="stat-sub">paid accounts</div>
+      <div class="admin-table-wrap" style="padding:1.25rem;">
+
+        <!-- Stat cards row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem;" id="analyticsCards">
+          <div style="background:var(--navy);color:white;border-radius:10px;padding:1rem;">
+            <div style="font-size:0.72rem;opacity:0.6;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">New Signups</div>
+            <div style="font-size:1.8rem;font-weight:700;" id="aStatSignups">—</div>
+            <div style="font-size:0.72rem;opacity:0.5;" id="aStatSignupsSub">this period</div>
+          </div>
+          <div style="background:var(--rust);color:white;border-radius:10px;padding:1rem;">
+            <div style="font-size:0.72rem;opacity:0.7;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Estimates Run</div>
+            <div style="font-size:1.8rem;font-weight:700;" id="aStatEstimates">—</div>
+            <div style="font-size:0.72rem;opacity:0.6;" id="aStatEstimatesSub">this period</div>
+          </div>
+          <div style="background:var(--sage);color:white;border-radius:10px;padding:1rem;">
+            <div style="font-size:0.72rem;opacity:0.7;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Visualizations</div>
+            <div style="font-size:1.8rem;font-weight:700;" id="aStatViz">—</div>
+            <div style="font-size:0.72rem;opacity:0.6;" id="aStatVizSub">this period</div>
+          </div>
+          <div style="background:var(--gold);color:var(--navy);border-radius:10px;padding:1rem;">
+            <div style="font-size:0.72rem;opacity:0.7;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.35rem;">Paid Conversions</div>
+            <div style="font-size:1.8rem;font-weight:700;" id="aStatPaid">—</div>
+            <div style="font-size:0.72rem;opacity:0.6;" id="aStatPaidSub">this period</div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div style="background:var(--cream);border-radius:10px;border:1px solid var(--border);padding:1rem;">
+          <div style="font-size:0.8rem;font-weight:600;color:var(--navy);margin-bottom:0.85rem;">Daily activity</div>
+          <div id="analyticsChart" style="height:120px;display:flex;align-items:flex-end;gap:3px;overflow:hidden;">
+            <div style="color:var(--muted);font-size:0.8rem;margin:auto;">Loading chart...</div>
+          </div>
+          <div id="analyticsChartLegend" style="display:flex;gap:1rem;margin-top:0.75rem;flex-wrap:wrap;font-size:0.72rem;color:var(--muted);">
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--navy);border-radius:2px;margin-right:4px;"></span>Estimates</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--sage);border-radius:2px;margin-right:4px;"></span>Visualizations</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:var(--rust);border-radius:2px;margin-right:4px;"></span>Signups</span>
+          </div>
+        </div>
+
+        <!-- All-time totals row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-top:1rem;">
+          <div style="text-align:center;padding:0.75rem;background:var(--cream);border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--navy);" id="statUsers">—</div>
+            <div style="font-size:0.75rem;color:var(--muted);">Total Users</div>
+          </div>
+          <div style="text-align:center;padding:0.75rem;background:var(--cream);border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--navy);" id="statEstimates">—</div>
+            <div style="font-size:0.75rem;color:var(--muted);">Total Estimates</div>
+          </div>
+          <div style="text-align:center;padding:0.75rem;background:var(--cream);border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:1.4rem;font-weight:700;color:var(--navy);" id="statPro">—</div>
+            <div style="font-size:0.75rem;color:var(--muted);">Pro Users</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2129,7 +2183,7 @@ function handleFile(file) {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX = 1200;
+      const MAX = 1024;
       let w = img.width, h = img.height;
       if (w > MAX || h > MAX) {
         const scale = MAX / Math.max(w, h);
@@ -2137,7 +2191,8 @@ function handleFile(file) {
       }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+      // Use 0.82 quality to keep under 4MB for OpenAI
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
       imageBase64 = dataUrl.split(',')[1];
       imageMediaType = 'image/jpeg';
       const preview = document.getElementById('photoPreview');
@@ -3323,6 +3378,7 @@ async function loadAdminData() {
   loadAdminStats();
   loadAdminEstimates();
   loadAdminUsers();
+  loadAnalytics();
   runHealthChecks();
   const el = document.getElementById('adminLastRefresh');
   if (el) el.textContent = 'Last refreshed: ' + new Date().toLocaleTimeString();
@@ -4388,6 +4444,7 @@ Rules:
     if (imgData.data?.[0]?.b64_json) {
       vizResultImageSrc = 'data:image/png;base64,' + imgData.data[0].b64_json;
       incVizCount();
+      trackEvent('visualizations_count');
 
       // Show before/after
       document.getElementById('combinedVizBefore').src = vizPhotoDataUrl;
@@ -5232,17 +5289,7 @@ async function submitPasswordReset() {
 
 // ─── ANONYMOUS USAGE TRACKING ─────────────────────────────────────────────────
 async function trackAnonymousEstimate() {
-  if (!dbReady) return;
-  try {
-    // Upsert a daily counter row — works without auth
-    const today = new Date().toISOString().split('T')[0];
-    await db.from('usage_stats').upsert({
-      date: today,
-      estimates_count: 1
-    }, { onConflict: 'date', ignoreDuplicates: false });
-    // Increment via RPC if available, otherwise just log
-    await db.rpc('increment_estimate_count', { p_date: today }).catch(() => {});
-  } catch(e) { /* silent fail */ }
+  await trackEvent('estimates_count');
 }
 
 
@@ -5271,6 +5318,129 @@ function checkStripeRedirect() {
     window.history.replaceState({}, document.title, '/');
     showToast('Checkout cancelled — no charge made');
   }
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _analyticsPeriod = 'today';
+let _analyticsData = [];
+
+function setAnalyticsPeriod(period) {
+  _analyticsPeriod = period;
+  // Update active button
+  ['today','7d','30d','all'].forEach(p => {
+    const btn = document.getElementById('period' + p.charAt(0).toUpperCase() + p.slice(1));
+    if (btn) btn.classList.toggle('active', p === period);
+  });
+  renderAnalytics();
+}
+
+async function loadAnalytics() {
+  if (!dbReady) return;
+  try {
+    // Load all usage_stats
+    const { data } = await db.from('usage_stats')
+      .select('date, estimates_count, signups_count, visualizations_count, paid_conversions')
+      .order('date', { ascending: true });
+    _analyticsData = data || [];
+    renderAnalytics();
+  } catch(e) {
+    console.error('Analytics load error:', e);
+  }
+}
+
+function renderAnalytics() {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  let filtered = [];
+  let periodLabel = '';
+
+  if (_analyticsPeriod === 'today') {
+    filtered = _analyticsData.filter(r => r.date === today);
+    periodLabel = 'today';
+  } else if (_analyticsPeriod === '7d') {
+    const cutoff = new Date(now - 7 * 86400000).toISOString().split('T')[0];
+    filtered = _analyticsData.filter(r => r.date >= cutoff);
+    periodLabel = 'last 7 days';
+  } else if (_analyticsPeriod === '30d') {
+    const cutoff = new Date(now - 30 * 86400000).toISOString().split('T')[0];
+    filtered = _analyticsData.filter(r => r.date >= cutoff);
+    periodLabel = 'last 30 days';
+  } else {
+    filtered = _analyticsData;
+    periodLabel = 'all time';
+  }
+
+  // Sum totals
+  const totals = filtered.reduce((acc, r) => ({
+    estimates: acc.estimates + (r.estimates_count || 0),
+    signups: acc.signups + (r.signups_count || 0),
+    viz: acc.viz + (r.visualizations_count || 0),
+    paid: acc.paid + (r.paid_conversions || 0),
+  }), { estimates: 0, signups: 0, viz: 0, paid: 0 });
+
+  // Update stat cards
+  document.getElementById('aStatSignups').textContent = totals.signups;
+  document.getElementById('aStatEstimates').textContent = totals.estimates;
+  document.getElementById('aStatViz').textContent = totals.viz;
+  document.getElementById('aStatPaid').textContent = totals.paid;
+  ['aStatSignupsSub','aStatEstimatesSub','aStatVizSub','aStatPaidSub'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = periodLabel;
+  });
+
+  // Render chart
+  renderAnalyticsChart(filtered);
+}
+
+function renderAnalyticsChart(data) {
+  const container = document.getElementById('analyticsChart');
+  if (!container) return;
+
+  if (!data.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;margin:auto;">No data for this period</div>';
+    return;
+  }
+
+  // For 'today' show hourly feel — just the one bar
+  // For multi-day show each day as grouped bars
+  const maxVal = Math.max(...data.map(r => Math.max(
+    r.estimates_count || 0, r.visualizations_count || 0, r.signups_count || 0
+  )), 1);
+
+  const chartHeight = 100;
+  const barGroupWidth = Math.max(4, Math.floor((container.clientWidth || 300) / (data.length * 3 + data.length)));
+
+  container.innerHTML = data.map(r => {
+    const eH = Math.round((r.estimates_count || 0) / maxVal * chartHeight);
+    const vH = Math.round((r.visualizations_count || 0) / maxVal * chartHeight);
+    const sH = Math.round((r.signups_count || 0) / maxVal * chartHeight);
+    const dateLabel = data.length <= 7 ? r.date.slice(5) : (data.indexOf(r) % Math.ceil(data.length/7) === 0 ? r.date.slice(5) : '');
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;min-width:0;">
+      <div style="display:flex;align-items:flex-end;gap:1px;height:${chartHeight}px;">
+        <div title="Estimates: ${r.estimates_count||0}" style="width:${barGroupWidth}px;height:${eH}px;background:var(--navy);border-radius:2px 2px 0 0;min-height:${eH>0?2:0}px;"></div>
+        <div title="Visualizations: ${r.visualizations_count||0}" style="width:${barGroupWidth}px;height:${vH}px;background:var(--sage);border-radius:2px 2px 0 0;min-height:${vH>0?2:0}px;"></div>
+        <div title="Signups: ${r.signups_count||0}" style="width:${barGroupWidth}px;height:${sH}px;background:var(--rust);border-radius:2px 2px 0 0;min-height:${sH>0?2:0}px;"></div>
+      </div>
+      ${dateLabel ? `<div style="font-size:0.58rem;color:var(--muted);white-space:nowrap;">${dateLabel}</div>` : '<div style="height:12px;"></div>'}
+    </div>`;
+  }).join('');
+}
+
+// Track events
+async function trackEvent(eventType) {
+  if (!dbReady) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    await db.rpc('increment_stat', { p_date: today, p_column: eventType }).catch(() => {
+      // Fallback: upsert manually
+      return db.from('usage_stats').upsert({ date: today }, { onConflict: 'date' });
+    });
+  } catch(e) { /* silent */ }
 }
 
 </script>
