@@ -527,8 +527,8 @@
 
   /* ANIMATIONS */
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translate3d(0, 16px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes modalIn {
@@ -621,6 +621,11 @@
     z-index: 200;
     height: 56px;
     box-shadow: 0 -1px 8px rgba(0,0,0,0.06);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
   .app-tab {
     flex: 1;
@@ -1840,45 +1845,6 @@
     </div>
   </div><!-- /sectionDiscover -->
 
-  <!-- DISCOVER DETAIL SHEET OVERLAY -->
-  <div id="sheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:800;" onclick="closeDetailSheet()"></div>
-
-  <!-- DISCOVER DETAIL SHEET -->
-  <div id="detailSheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;z-index:900;max-height:90vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.3s ease;">
-    <!-- Handle -->
-    <div style="display:flex;justify-content:center;padding:0.75rem 0 0;">
-      <div style="width:40px;height:4px;background:#e5e7eb;border-radius:2px;"></div>
-    </div>
-    <!-- Header -->
-    <div style="padding:1rem 1.25rem 0.5rem;display:flex;justify-content:space-between;align-items:flex-start;">
-      <div style="flex:1;">
-        <div id="sheetTitle" style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#111;margin-bottom:0.2rem;"></div>
-        <div id="sheetMeta" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;"></div>
-        <div id="sheetPrice" style="font-size:0.85rem;font-weight:600;color:#E8481C;"></div>
-      </div>
-      <button onclick="closeDetailSheet()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#9ca3af;padding:0;margin-left:1rem;">✕</button>
-    </div>
-    <!-- Carousel -->
-    <div style="position:relative;overflow:hidden;margin:0.75rem 0;">
-      <div id="carouselTrack" style="display:flex;transition:transform 0.3s ease;"></div>
-      <!-- Arrows -->
-      <button id="carouselPrev" onclick="slideCarousel(-1)" style="position:absolute;left:0.5rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
-      <button id="carouselNext" onclick="slideCarousel(1)" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
-      <!-- Dots -->
-      <div id="carouselDots" style="position:absolute;bottom:0.5rem;left:0;right:0;display:flex;justify-content:center;gap:4px;"></div>
-    </div>
-    <!-- Details -->
-    <div style="padding:0 1.25rem 1.5rem;">
-      <div id="sheetStyleBadge" style="display:inline-block;background:rgba(232,72,28,0.08);color:#E8481C;border:1px solid rgba(232,72,28,0.2);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:600;margin-bottom:0.75rem;"></div>
-      <p id="sheetDesc" style="font-size:0.9rem;color:#374151;line-height:1.6;margin-bottom:1.25rem;"></p>
-      <!-- CTA button -->
-      <button onclick="sheetVisualizeOnMySpace()" style="width:100%;background:#E8481C;color:white;border:none;border-radius:99px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(232,72,28,0.35);">
-        ✨ Use This Style on My Space
-      </button>
-      <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:0.6rem;">Upload your photo and AI will apply this style to your room</p>
-    </div>
-  </div>
-
   <!-- ADMIN SECTION -->
   <div class="page-section" id="sectionAdmin">
 
@@ -2771,7 +2737,11 @@ function setLoading(on) {
   document.getElementById('loading').classList.toggle('visible', on);
   document.getElementById('submitBtn').disabled = on;
 }
-function hideResults() { document.getElementById('results').classList.remove('visible'); }
+function hideResults() {
+  document.getElementById('results').classList.remove('visible');
+  const p = document.getElementById('vizBeforeAfterPanel');
+  if (p) p.style.display = 'none';
+}
 function hideError() { const e = document.getElementById('errorBox'); e.classList.remove('visible'); e.textContent = ''; }
 function showError(msg) { const e = document.getElementById('errorBox'); e.textContent = msg; e.classList.add('visible'); }
 
@@ -3512,6 +3482,36 @@ Only list what you can clearly see was added or changed. Do not guess.`;
 
     // ── Switch to estimate tab ────────────────────────────────────────────────
     switchTab('estimate');
+
+    // ── Show before/after panel on estimate tab ───────────────────────────────
+    const beforeSrc = vizPhotoDataUrl || (vizPhotoBase64 ? 'data:image/jpeg;base64,' + vizPhotoBase64 : null);
+    const afterSrc = vizResultImageSrc;
+    if (beforeSrc || afterSrc) {
+      let panel = document.getElementById('vizBeforeAfterPanel');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'vizBeforeAfterPanel';
+        panel.style.cssText = 'margin-bottom:1.25rem;border-radius:14px;overflow:hidden;border:1px solid var(--border);';
+        const formCard = document.querySelector('.form-card');
+        if (formCard) formCard.before(panel);
+      }
+      panel.innerHTML = `
+        <div style="background:#E8481C;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.5rem;">
+          <span style="color:white;font-size:0.8rem;font-weight:700;">✨ Your Visualization</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+          ${beforeSrc ? `<div style="position:relative;">
+            <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0.4rem 0.6rem;background:#f9fafb;border-bottom:1px solid var(--border);">Before</div>
+            <img src="${beforeSrc}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:pointer;" onclick="openImgLightbox('${beforeSrc}')">
+          </div>` : ''}
+          ${afterSrc ? `<div style="position:relative;border-left:1px solid var(--border);">
+            <div style="font-size:0.7rem;font-weight:700;color:#E8481C;text-transform:uppercase;letter-spacing:0.08em;padding:0.4rem 0.6rem;background:#fff5f2;border-bottom:1px solid #fde8e0;">After</div>
+            <img src="${afterSrc}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:pointer;" onclick="openImgLightbox('${afterSrc}')">
+          </div>` : ''}
+        </div>`;
+      panel.style.display = 'block';
+    }
+
     setTimeout(() => {
       document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
       showToast('✅ Delta analysis complete — estimating additions only');
@@ -4296,15 +4296,15 @@ function openDetailSheet(catId, itemIdx) {
   // Build carousel with ALL items in this category
   const track = document.getElementById('carouselTrack');
   track.innerHTML = _carouselItems.map(item => `
-    <div class="carousel-slide" style="min-width:100%;flex-shrink:0;">
-      <img src="${item.img}" alt="${item.title}" loading="lazy" style="width:100%;height:260px;object-fit:cover;display:block;"
+    <div class="carousel-slide">
+      <img src="${item.img}" alt="${item.title}" loading="lazy"
         onerror="this.src='https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&h=500&fit=crop'">
     </div>`).join('');
 
   // Build dots
   const dots = document.getElementById('carouselDots');
   dots.innerHTML = _carouselItems.map((_, i) =>
-    `<div onclick="goCarousel(${i})" style="width:6px;height:6px;border-radius:50%;background:${i===itemIdx?'white':'rgba(255,255,255,0.5)'};cursor:pointer;transition:background 0.2s;"></div>`
+    `<div class="carousel-dot ${i === itemIdx ? 'active' : ''}" onclick="goCarousel(${i})"></div>`
   ).join('');
 
   // Set initial position
@@ -4315,24 +4315,14 @@ function openDetailSheet(catId, itemIdx) {
   document.getElementById('carouselNext').style.display = _carouselItems.length > 1 ? 'flex' : 'none';
 
   // Open sheet
-  const overlay = document.getElementById('sheetOverlay');
-  const sheet = document.getElementById('detailSheet');
-  overlay.style.display = 'block';
-  sheet.style.display = 'block';
-  requestAnimationFrame(() => {
-    sheet.style.transform = 'translateY(0)';
-  });
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('detailSheet').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function closeDetailSheet() {
-  const overlay = document.getElementById('sheetOverlay');
-  const sheet = document.getElementById('detailSheet');
-  sheet.style.transform = 'translateY(100%)';
-  setTimeout(() => {
-    overlay.style.display = 'none';
-    sheet.style.display = 'none';
-  }, 300);
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('detailSheet').classList.remove('open');
   document.body.style.overflow = '';
 }
 
@@ -4350,9 +4340,7 @@ function slideCarousel(dir) {
 function goCarousel(idx) {
   _carouselIdx = idx;
   document.getElementById('carouselTrack').style.transform = `translateX(-${idx * 100}%)`;
-  document.getElementById('carouselDots').querySelectorAll('div').forEach((d, i) => {
-    d.style.background = i === idx ? 'white' : 'rgba(255,255,255,0.5)';
-  });
+  document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 }
 
 function sheetVisualizeOnMySpace() {
