@@ -2172,15 +2172,45 @@ window.addEventListener('load', () => {
   checkSession();
   // Track page visit (anonymous or logged in)
   setTimeout(() => trackEvent('visitors_count'), 2000);
+
+  // Check for shared estimate via ?s= short link
+  const params = new URLSearchParams(location.search);
+  const shareId = params.get('s');
+  if (shareId) {
+    loadSharedEstimate(shareId);
+    return;
+  }
+
+  // Fallback: legacy hash-based shared estimate
   const hash = location.hash.slice(1);
-  if (hash) {
+  if (hash && !hash.includes('access_token') && !hash.includes('type=recovery')) {
     try {
       const data = JSON.parse(decodeURIComponent(atob(hash)));
-      document.getElementById('sharedBanner').classList.add('visible');
-      renderResults(data);
+      if (data && (data.title || data.priceRange)) {
+        document.getElementById('sharedBanner').classList.add('visible');
+        renderResults(data);
+        window.history.replaceState({}, document.title, location.pathname);
+      }
     } catch(e) { /* bad hash, ignore */ }
   }
 });
+
+async function loadSharedEstimate(shareId) {
+  // Wait for Supabase to be ready
+  let tries = 0;
+  while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 150)); tries++; }
+  if (!dbReady) { showToast('Could not load shared estimate'); return; }
+  try {
+    const { data, error } = await db.from('shared_estimates').select('data').eq('id', shareId).single();
+    if (error || !data) throw error || new Error('not found');
+    document.getElementById('sharedBanner').classList.add('visible');
+    renderResults(data.data);
+    window.history.replaceState({}, document.title, location.pathname);
+  } catch(e) {
+    console.error('Load shared failed:', e);
+    showToast('This shared estimate could not be found');
+  }
+}
 
 // ─── PHOTO HANDLING ───────────────────────────────────────────────────────────
 function triggerFile() {
@@ -2616,7 +2646,7 @@ function copyFallback(text) {
 }
 
 // ─── SHARE ────────────────────────────────────────────────────────────────────
-function shareEstimate() {
+async function shareEstimate() {
   if (!currentEstimate) return;
   const payload = { ...currentEstimate };
   delete payload.user_id;
@@ -2624,15 +2654,40 @@ function shareEstimate() {
   if (vizResultImageSrc) payload.vizImage = vizResultImageSrc;
   const beforeSrc = vizPhotoDataUrl || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
   if (beforeSrc) payload.beforeImage = beforeSrc;
-  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
-  const url = location.origin + location.pathname + '#' + encoded;
-  document.getElementById('shareUrl').value = url;
+
+  // Show modal immediately with loading state
   document.getElementById('shareCardTitle').textContent = currentEstimate.title;
   document.getElementById('shareCardPrice').textContent = currentEstimate.priceRange;
   document.getElementById('shareCardMeta').textContent =
     `${currentEstimate.difficulty} · ${currentEstimate.timeline}`;
+  document.getElementById('shareUrl').value = 'Generating link...';
   document.getElementById('shareModal').classList.add('open');
+
+  // Generate short ID and save to Supabase
+  const shareId = Math.random().toString(36).slice(2, 10);
+  if (dbReady) {
+    try {
+      const { error } = await db.from('shared_estimates').insert({ id: shareId, data: payload });
+      if (error) throw error;
+      const url = location.origin + location.pathname + '?s=' + shareId;
+      document.getElementById('shareUrl').value = url;
+      _currentShareUrl = url;
+    } catch(e) {
+      console.error('Share save failed:', e);
+      // Fallback to hash method if DB fails
+      const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+      const url = location.origin + location.pathname + '#' + encoded;
+      document.getElementById('shareUrl').value = url;
+      _currentShareUrl = url;
+    }
+  } else {
+    const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+    const url = location.origin + location.pathname + '#' + encoded;
+    document.getElementById('shareUrl').value = url;
+    _currentShareUrl = url;
+  }
 }
+let _currentShareUrl = '';
 
 function closeModal() { document.getElementById('shareModal').classList.remove('open'); }
 document.getElementById('shareModal').addEventListener('click', e => {
@@ -2649,21 +2704,25 @@ function copyLink() {
 }
 
 function shareWhatsApp() {
-  const url = document.getElementById('shareUrl').value;
-  window.open(`https://wa.me/?text=${encodeURIComponent(`DIY Estimator estimate for ${currentEstimate?.title}: ${currentEstimate?.priceRange} — ${url}`)}`);
+  const url = _currentShareUrl || document.getElementById('shareUrl').value;
+  if (!url || url === 'Generating link...') { showToast('Link still generating, try again'); return; }
+  window.open(`https://wa.me/?text=${encodeURIComponent(`DIY Estimator: ${currentEstimate?.title} — ${currentEstimate?.priceRange}\n${url}`)}`);
 }
 
 function shareSMS() {
-  const url = document.getElementById('shareUrl').value;
-  window.open(`sms:?body=${encodeURIComponent(`DIY Estimator estimate: ${currentEstimate?.title} — ${currentEstimate?.priceRange} ${url}`)}`);
+  const url = _currentShareUrl || document.getElementById('shareUrl').value;
+  if (!url || url === 'Generating link...') { showToast('Link still generating, try again'); return; }
+  window.location.href = `sms:?&body=${encodeURIComponent(`DIY Estimator: ${currentEstimate?.title} — ${currentEstimate?.priceRange}\n${url}`)}`;
 }
 
 function shareNative() {
+  const url = _currentShareUrl || document.getElementById('shareUrl').value;
+  if (!url || url === 'Generating link...') { showToast('Link still generating, try again'); return; }
   if (navigator.share) {
     navigator.share({
       title: `DIY Estimator: ${currentEstimate?.title}`,
       text: `Estimated ${currentEstimate?.priceRange}`,
-      url: document.getElementById('shareUrl').value
+      url: url
     }).catch(() => {});
   } else { copyLink(); }
 }
