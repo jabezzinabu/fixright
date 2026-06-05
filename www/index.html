@@ -1845,6 +1845,36 @@
     </div>
   </div><!-- /sectionDiscover -->
 
+  <!-- DISCOVER DETAIL SHEET OVERLAY -->
+  <div id="sheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:800;" onclick="closeDetailSheet()"></div>
+
+  <!-- DISCOVER DETAIL SHEET -->
+  <div id="detailSheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-radius:20px 20px 0 0;z-index:900;max-height:90vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.3s ease;">
+    <div style="display:flex;justify-content:center;padding:0.75rem 0 0;">
+      <div style="width:40px;height:4px;background:#e5e7eb;border-radius:2px;"></div>
+    </div>
+    <div style="padding:1rem 1.25rem 0.5rem;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div style="flex:1;">
+        <div id="sheetTitle" style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#111;margin-bottom:0.2rem;"></div>
+        <div id="sheetMeta" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.3rem;"></div>
+        <div id="sheetPrice" style="font-size:0.85rem;font-weight:600;color:#E8481C;"></div>
+      </div>
+      <button onclick="closeDetailSheet()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#9ca3af;padding:0;margin-left:1rem;">✕</button>
+    </div>
+    <div style="position:relative;overflow:hidden;margin:0.75rem 0;">
+      <div id="carouselTrack" style="display:flex;transition:transform 0.3s ease;"></div>
+      <button id="carouselPrev" onclick="slideCarousel(-1)" style="position:absolute;left:0.5rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+      <button id="carouselNext" onclick="slideCarousel(1)" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+      <div id="carouselDots" style="position:absolute;bottom:0.5rem;left:0;right:0;display:flex;justify-content:center;gap:4px;"></div>
+    </div>
+    <div style="padding:0 1.25rem 1.5rem;">
+      <div id="sheetStyleBadge" style="display:inline-block;background:rgba(232,72,28,0.08);color:#E8481C;border:1px solid rgba(232,72,28,0.2);border-radius:99px;padding:0.25rem 0.75rem;font-size:0.75rem;font-weight:600;margin-bottom:0.75rem;"></div>
+      <p id="sheetDesc" style="font-size:0.9rem;color:#374151;line-height:1.6;margin-bottom:1.25rem;"></p>
+      <button onclick="sheetVisualizeOnMySpace()" style="width:100%;background:#E8481C;color:white;border:none;border-radius:99px;padding:1rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(232,72,28,0.35);">✨ Use This Style on My Space</button>
+      <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:0.6rem;">Upload your photo and AI will apply this style to your room</p>
+    </div>
+  </div>
+
   <!-- ADMIN SECTION -->
   <div class="page-section" id="sectionAdmin">
 
@@ -4296,15 +4326,15 @@ function openDetailSheet(catId, itemIdx) {
   // Build carousel with ALL items in this category
   const track = document.getElementById('carouselTrack');
   track.innerHTML = _carouselItems.map(item => `
-    <div class="carousel-slide">
-      <img src="${item.img}" alt="${item.title}" loading="lazy"
+    <div class="carousel-slide" style="min-width:100%;flex-shrink:0;">
+      <img src="${item.img}" alt="${item.title}" loading="lazy" style="width:100%;height:260px;object-fit:cover;display:block;"
         onerror="this.src='https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&h=500&fit=crop'">
     </div>`).join('');
 
   // Build dots
   const dots = document.getElementById('carouselDots');
   dots.innerHTML = _carouselItems.map((_, i) =>
-    `<div class="carousel-dot ${i === itemIdx ? 'active' : ''}" onclick="goCarousel(${i})"></div>`
+    `<div onclick="goCarousel(${i})" style="width:6px;height:6px;border-radius:50%;background:${i===itemIdx?'white':'rgba(255,255,255,0.5)'};cursor:pointer;"></div>`
   ).join('');
 
   // Set initial position
@@ -4315,14 +4345,19 @@ function openDetailSheet(catId, itemIdx) {
   document.getElementById('carouselNext').style.display = _carouselItems.length > 1 ? 'flex' : 'none';
 
   // Open sheet
-  document.getElementById('sheetOverlay').classList.add('open');
-  document.getElementById('detailSheet').classList.add('open');
+  const overlay = document.getElementById('sheetOverlay');
+  const sheet = document.getElementById('detailSheet');
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => { sheet.style.transform = 'translateY(0)'; });
   document.body.style.overflow = 'hidden';
 }
 
 function closeDetailSheet() {
-  document.getElementById('sheetOverlay').classList.remove('open');
-  document.getElementById('detailSheet').classList.remove('open');
+  const sheet = document.getElementById('detailSheet');
+  const overlay = document.getElementById('sheetOverlay');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { sheet.style.display = 'none'; overlay.style.display = 'none'; }, 300);
   document.body.style.overflow = '';
 }
 
@@ -4340,7 +4375,7 @@ function slideCarousel(dir) {
 function goCarousel(idx) {
   _carouselIdx = idx;
   document.getElementById('carouselTrack').style.transform = `translateX(-${idx * 100}%)`;
-  document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+  document.getElementById('carouselDots').querySelectorAll('div').forEach((d, i) => { d.style.background = i === idx ? 'white' : 'rgba(255,255,255,0.5)'; });
 }
 
 function sheetVisualizeOnMySpace() {
