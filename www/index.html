@@ -1412,6 +1412,27 @@
   .period-btn:hover:not(.active) { border-color: #111111; color: #111111; }
   @media (max-width: 700px) { #analyticsCards { grid-template-columns: repeat(2,1fr) !important; } }
 
+
+  /* ── IMAGE LIGHTBOX ─────────────────────────────────────────────────────── */
+  .img-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .img-lightbox.open { display: flex; }
+  .img-lightbox img { max-width: 100%; max-height: 90vh; border-radius: 10px; object-fit: contain; }
+  .img-lightbox-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
 </style>
 </head>
 <body>
@@ -1450,8 +1471,8 @@
     ✨ Visualize
     
   </button>
-  <button class="app-tab" id="tabDiscover" onclick="switchTab('discover')" style="display:none">
-    🌟 Discover
+  <button class="app-tab" id="tabDiscover" onclick="switchTab('discover')">
+    🌟 Discover <span style="font-size:0.55rem;background:#E8481C;color:white;border-radius:4px;padding:1px 4px;vertical-align:middle;margin-left:2px;font-weight:700;letter-spacing:0.04em;">BETA</span>
   </button>
   <button class="app-tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">
     ⚙️ Admin
@@ -2015,16 +2036,7 @@
               Enabled
             </label>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-weight:600;font-size:0.9rem;color:#1c2b3a">Discover Tab</div>
-              <div style="font-size:0.78rem;color:var(--muted)">Show Discover to all users (currently admin-only)</div>
-            </div>
-            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted)">
-              <input type="checkbox" id="flagDiscoverPublic" onchange="toggleDiscoverPublic(this.checked)" style="width:16px;height:16px;accent-color:var(--rust)">
-              Enabled
-            </label>
-          </div>
+
           <div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0;border-bottom:1px solid var(--border);">
             <div>
               <div style="font-weight:600;font-size:0.9rem;color:#1c2b3a">Upgrade Prompt Delay</div>
@@ -2411,11 +2423,11 @@ function renderResults(est) {
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">';
       if (est.beforeImage) {
         html += `<div><div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">Before</div>
-          <img src="${est.beforeImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;"></div>`;
+          <img src="${est.beforeImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;cursor:pointer;" onclick="openImgLightbox('${est.beforeImage}')"></div>`;
       }
       if (est.vizImage) {
         html += `<div><div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">After</div>
-          <img src="${est.vizImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;"></div>`;
+          <img src="${est.vizImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;cursor:pointer;" onclick="openImgLightbox('${est.vizImage}')"></div>`;
       }
       html += '</div></div>';
       beforeAfterEl.innerHTML = html;
@@ -2803,7 +2815,7 @@ function grantSuperAdmin() {
   currentUser.role = 'admin';
   // Show admin + discover + visualize tabs
   document.getElementById('tabAdmin').style.display = 'flex';
-  document.getElementById('tabDiscover').style.display = 'flex';
+
   document.getElementById('tabVisualize').style.display = 'flex';
 
   // Show admin badge on avatar
@@ -2980,6 +2992,9 @@ function switchTab(tab) {
   }
   if (tab === 'admin') {
     loadAdminData();
+  }
+  if (tab === 'discover') {
+    renderDiscoverCategories();
   }
 }
 
@@ -3529,10 +3544,7 @@ async function loadAdminData() {
   const el = document.getElementById('adminLastRefresh');
   if (el) el.textContent = 'Last refreshed: ' + new Date().toLocaleTimeString();
   // Restore feature flag states
-  if (localStorage.getItem('flag_discoverPublic') === '1') {
-    const cb = document.getElementById('flagDiscoverPublic');
-    if (cb) cb.checked = true;
-  }
+
 }
 
 async function loadAdminStats() {
@@ -3713,19 +3725,7 @@ async function grantRoleByEmail() {
   }
 }
 
-function toggleDiscoverPublic(enabled) {
-  // Show/hide discover tab for all users
-  const tab = document.getElementById('tabDiscover');
-  if (enabled) {
-    tab.style.display = 'flex';
-    localStorage.setItem('flag_discoverPublic', '1');
-  } else {
-    if (!isAdmin()) tab.style.display = 'none';
-    localStorage.removeItem('flag_discoverPublic');
-  }
-  saveFlag('discoverPublic', enabled);
-  showToast(enabled ? '✓ Discover tab visible to all users' : '✓ Discover tab hidden from regular users');
-}
+
 
 async function setUserRole(userId, role) {
   if (!isAdmin() || !dbReady) return;
@@ -5650,4 +5650,21 @@ async function trackEvent(eventType) {
     }
   }
 
+function openImgLightbox(src) {
+  document.getElementById('imgLightboxSrc').src = src;
+  document.getElementById('imgLightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeImgLightbox() {
+  document.getElementById('imgLightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgLightbox(); });
+
 </script>
+
+  <!-- IMAGE LIGHTBOX -->
+  <div class="img-lightbox" id="imgLightbox" onclick="closeImgLightbox()">
+    <button class="img-lightbox-close" onclick="event.stopPropagation();closeImgLightbox()">✕</button>
+    <img id="imgLightboxSrc" src="" alt="" onclick="event.stopPropagation()">
+  </div>
