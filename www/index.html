@@ -601,6 +601,10 @@
   .dropdown-item { padding: 0.65rem 1rem; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; color: #111111; }
   .dropdown-item:hover { background: var(--cream); }
   .dropdown-item.danger { color: var(--rust); }
+  .pwd-wrap { position: relative; }
+  .pwd-wrap input { width: 100%; padding-right: 2.5rem !important; }
+  .pwd-toggle { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; padding: 0; line-height: 1; }
+  .pwd-toggle:hover { color: #E8481C; }
   .btn-signin { background: #E8481C; border: none; color: white; padding: 0.4rem 1rem; border-radius: 99px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; transition: background 0.2s; }
   .btn-signin:hover { background: #ff5e2e; }
 
@@ -3603,7 +3607,10 @@ const _origSwitchTab = switchTab;
       <div class="auth-success" id="authSuccess"></div>
       <div class="auth-form">
         <input type="email" id="authEmail" placeholder="Email address">
-        <input type="password" id="authPassword" placeholder="Password" id="authPassword">
+        <div class="pwd-wrap">
+          <input type="password" id="authPassword" placeholder="Password">
+          <button type="button" class="pwd-toggle" onclick="togglePwd('authPassword', this)" title="Show/hide password">👁</button>
+        </div>
         <div id="forgotRow" style="text-align:right;margin-top:-0.25rem;margin-bottom:0.25rem;">
           <button onclick="showForgotPassword()" style="background:none;border:none;color:var(--rust);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;">Forgot password?</button>
         </div>
@@ -5249,13 +5256,19 @@ function showPasswordResetModal() {
         <div class="auth-success" id="resetSuccess"></div>
         <div class="field" style="margin-bottom:1rem;">
           <label>New password</label>
-          <input type="password" id="resetNewPassword" placeholder="Enter new password (min 6 characters)"
-            style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+          <div class="pwd-wrap">
+            <input type="password" id="resetNewPassword" placeholder="Enter new password (min 6 characters)"
+              style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+            <button type="button" class="pwd-toggle" onclick="togglePwd('resetNewPassword', this)" title="Show/hide password">👁</button>
+          </div>
         </div>
         <div class="field" style="margin-bottom:1.25rem;">
           <label>Confirm password</label>
-          <input type="password" id="resetConfirmPassword" placeholder="Confirm new password"
-            style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+          <div class="pwd-wrap">
+            <input type="password" id="resetConfirmPassword" placeholder="Confirm new password"
+              style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+            <button type="button" class="pwd-toggle" onclick="togglePwd('resetConfirmPassword', this)" title="Show/hide password">👁</button>
+          </div>
         </div>
         <button onclick="submitPasswordReset()" class="btn-auth" style="width:100%;">Update Password</button>
       </div>
@@ -5447,57 +5460,16 @@ async function trackEvent(eventType) {
   } catch(e) { /* silent */ }
 }
 
+  function togglePwd(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁';
+    }
+  }
+
 </script>
-
-
-<!-- SHEET OVERLAY -->
-<div class="sheet-overlay" id="sheetOverlay" onclick="closeDetailSheet()"></div>
-
-<!-- DETAIL SHEET -->
-<div class="detail-sheet" id="detailSheet">
-  <div class="sheet-handle"></div>
-
-  <div class="sheet-header">
-    <div>
-      <div class="sheet-title" id="sheetTitle"></div>
-      <div class="sheet-meta" id="sheetMeta"></div>
-      <div class="sheet-price" id="sheetPrice"></div>
-    </div>
-    <button class="sheet-close" onclick="closeDetailSheet()">✕</button>
-  </div>
-
-  <!-- CAROUSEL -->
-  <div class="sheet-carousel" id="sheetCarousel">
-    <div class="carousel-track" id="carouselTrack"></div>
-    <button class="carousel-arrow prev" id="carouselPrev" onclick="slideCarousel(-1)">‹</button>
-    <button class="carousel-arrow next" id="carouselNext" onclick="slideCarousel(1)">›</button>
-  </div>
-  <div class="carousel-dots" id="carouselDots"></div>
-
-  <div class="sheet-body">
-    <div class="sheet-style-badge" id="sheetStyleBadge"></div>
-    <p class="sheet-desc" id="sheetDesc"></p>
-  </div>
-
-  <div class="sheet-actions">
-    <button class="btn-sheet-primary" id="sheetVizBtn" onclick="sheetVisualizeOnMySpace()">
-      ✨ Visualize on My Space
-    </button>
-    <button class="btn-sheet-secondary" onclick="sheetJustEstimate()">
-      🔧 Just Estimate the Cost
-    </button>
-    <p class="sheet-hint">Upload your photo → AI applies this style to your actual room → get a cost estimate</p>
-  </div>
-</div>
-
-
-<!-- LIGHTBOX -->
-<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightboxImg" src="" alt="">
-  <div class="lightbox-label" id="lightboxLabel"></div>
-</div>
-
-</body>
-</html>
-
