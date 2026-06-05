@@ -2301,7 +2301,7 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
     const raw = data.content.map(b => b.text || '').join('');
     const clean = raw.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
-    currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: USER_ID };
+    currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: currentUser?.id || USER_ID };
     renderResults(currentEstimate);
     hideSavePrompt();
     // Track anonymous usage
@@ -2408,7 +2408,7 @@ async function saveEstimate() {
   if (!currentUser) { showToast('Please sign in to save estimates'); showAuthModal(); return; }
 
   const row = {
-    user_id: USER_ID,
+    user_id: currentUser.id,
     title: currentEstimate.title,
     price_range: currentEstimate.priceRange,
     difficulty: currentEstimate.difficulty,
@@ -2449,7 +2449,7 @@ async function loadSavedEstimates() {
       const { data, error } = await db
         .from('estimates')
         .select('*')
-        .eq('user_id', USER_ID)
+        .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(25);
       if (error) throw error;
@@ -3504,6 +3504,10 @@ async function loadAdminStats() {
   }
 }
 
+let _adminEstimates = [];
+let _adminEstPage = 0;
+const ADMIN_EST_PAGE_SIZE = 5;
+
 async function loadAdminEstimates() {
   const loading = document.getElementById('estimatesLoading');
   const table = document.getElementById('estimatesTable');
@@ -3512,24 +3516,52 @@ async function loadAdminEstimates() {
     const { data, error } = await db.from('estimates')
       .select('title, price_range, region, user_id, created_at')
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(200);
     loading.style.display = 'none';
     if (error) throw error;
     if (!data?.length) { empty.style.display = 'block'; return; }
-    const tbody = document.getElementById('estimatesBody');
-    tbody.innerHTML = data.map(e => `
-      <tr>
-        <td style="font-weight:500">${e.title || 'Untitled'}</td>
-        <td style="color:var(--rust);font-weight:600">${e.price_range || '—'}</td>
-        <td>${formatRegion(e.region)}</td>
-        <td style="font-family:monospace;font-size:0.75rem;color:var(--muted)">${(e.user_id||'').slice(0,12)}...</td>
-        <td style="color:var(--muted)">${new Date(e.created_at).toLocaleDateString()}</td>
-      </tr>`).join('');
+    _adminEstimates = data;
+    _adminEstPage = 0;
+    renderAdminEstimatesPage();
     table.style.display = 'table';
   } catch(e) {
     loading.textContent = 'Error loading estimates: ' + e.message;
   }
 }
+
+function renderAdminEstimatesPage() {
+  const total = _adminEstimates.length;
+  const totalPages = Math.ceil(total / ADMIN_EST_PAGE_SIZE);
+  const start = _adminEstPage * ADMIN_EST_PAGE_SIZE;
+  const page = _adminEstimates.slice(start, start + ADMIN_EST_PAGE_SIZE);
+  const tbody = document.getElementById('estimatesBody');
+  tbody.innerHTML = page.map(e => `
+    <tr>
+      <td style="font-weight:500">${e.title || 'Untitled'}</td>
+      <td style="color:var(--rust);font-weight:600">${e.price_range || '—'}</td>
+      <td>${formatRegion(e.region)}</td>
+      <td style="font-family:monospace;font-size:0.75rem;color:var(--muted)">${(e.user_id||'').slice(0,12)}...</td>
+      <td style="color:var(--muted)">${new Date(e.created_at).toLocaleDateString()}</td>
+    </tr>`).join('');
+  // Pagination controls
+  let pag = document.getElementById('estPagination');
+  if (!pag) {
+    pag = document.createElement('div');
+    pag.id = 'estPagination';
+    pag.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0.5rem 0;font-size:0.82rem;color:var(--muted);';
+    document.getElementById('estimatesTable').after(pag);
+  }
+  pag.innerHTML = `
+    <span>${start + 1}–${Math.min(start + ADMIN_EST_PAGE_SIZE, total)} of ${total}</span>
+    <div style="display:flex;gap:0.4rem;">
+      <button onclick="adminEstPrev()" ${_adminEstPage === 0 ? 'disabled' : ''} style="padding:0.3rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:${_adminEstPage===0?'#f3f4f6':'white'};cursor:${_adminEstPage===0?'default':'pointer'};font-size:0.8rem;">← Prev</button>
+      <span style="padding:0.3rem 0.5rem;font-weight:600;color:#111;">Page ${_adminEstPage + 1} / ${totalPages}</span>
+      <button onclick="adminEstNext()" ${_adminEstPage >= totalPages - 1 ? 'disabled' : ''} style="padding:0.3rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:${_adminEstPage>=totalPages-1?'#f3f4f6':'white'};cursor:${_adminEstPage>=totalPages-1?'default':'pointer'};font-size:0.8rem;">Next →</button>
+    </div>`;
+}
+
+function adminEstPrev() { if (_adminEstPage > 0) { _adminEstPage--; renderAdminEstimatesPage(); } }
+function adminEstNext() { if ((_adminEstPage + 1) * ADMIN_EST_PAGE_SIZE < _adminEstimates.length) { _adminEstPage++; renderAdminEstimatesPage(); } }
 
 let _allUsers = [];
 
