@@ -216,6 +216,7 @@
 
   /* PHOTO DROP */
   .photo-zone {
+    cursor: pointer;
     border: 2px dashed var(--border);
     border-radius: 12px;
     background: var(--cream);
@@ -233,10 +234,9 @@
     background: rgba(181,69,27,0.03);
   }
   .photo-zone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-    z-index: 2;
+    position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%;
+    z-index: -1; pointer-events: none;
   }
-  .photo-zone input[type=file][capture] { display: none !important; }
   .photo-icon { font-size: 2rem; margin-bottom: 0.4rem; }
   .photo-label { font-weight: 500; color: #111111; font-size: 0.95rem; }
   .photo-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
@@ -2352,7 +2352,7 @@ function handleFile(file) {
       preview.style.display = 'block';
       document.getElementById('photoPlaceholder').style.display = 'none';
       document.getElementById('photoClear').style.display = 'flex';
-      document.getElementById('photoInput').style.zIndex = '-1';
+
     };
     img.src = e.target.result;
   };
@@ -2366,7 +2366,6 @@ function clearPhoto(e) {
   document.getElementById('photoPlaceholder').style.display = 'block';
   document.getElementById('photoClear').style.display = 'none';
   document.getElementById('photoInput').value = '';
-  document.getElementById('photoInput').style.zIndex = '2';
 }
 
 const zone = document.getElementById('photoZone');
