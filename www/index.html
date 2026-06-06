@@ -236,6 +236,7 @@
     position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     z-index: 2;
   }
+  .photo-zone input[type=file][capture] { display: none !important; }
   .photo-icon { font-size: 2rem; margin-bottom: 0.4rem; }
   .photo-label { font-weight: 500; color: #111111; font-size: 0.95rem; }
   .photo-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
@@ -1533,12 +1534,17 @@
       <!-- PHOTO DROP -->
       <div class="photo-zone" id="photoZone">
         <input type="file" id="photoInput" accept="image/*" onchange="handleFile(this.files[0])">
+        <input type="file" id="photoInputCamera" accept="image/*" capture="environment" onchange="handleFile(this.files[0])" style="display:none">
         <img class="photo-preview" id="photoPreview" alt="Preview">
         <button class="photo-clear" id="photoClear" onclick="clearPhoto(event)">✕</button>
         <div id="photoPlaceholder">
           <div class="photo-icon">📷</div>
-          <div class="photo-label">Drop a photo or click to browse</div>
-          <div class="photo-sub">Optional — helps improve accuracy</div>
+          <div class="photo-label">Add a photo</div>
+          <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;">
+            <button type="button" onclick="event.stopPropagation();document.getElementById('photoInputCamera').click()" style="background:#E8481C;color:white;border:none;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 Take Photo</button>
+            <button type="button" onclick="event.stopPropagation();document.getElementById('photoInput').click()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🖼 Browse</button>
+          </div>
+          <div class="photo-sub" style="margin-top:0.4rem;">Optional — helps improve accuracy</div>
         </div>
       </div>
 
@@ -1769,12 +1775,17 @@
           <div style="font-size:0.82rem;font-weight:600;color:#1c2b3a;margin-bottom:0.5rem;">📷 Upload your space</div>
           <div class="photo-zone" id="vizPhotoZone" style="margin-bottom:1rem;min-height:150px;">
             <input type="file" id="vizPhotoInput" accept="image/*" onchange="handleVizPhoto(this.files[0])">
+            <input type="file" id="vizPhotoInputCamera" accept="image/*" capture="environment" onchange="handleVizPhoto(this.files[0])" style="display:none">
             <img class="photo-preview" id="vizPhotoPreview" alt="Preview">
             <button class="photo-clear" id="vizPhotoClear" onclick="clearVizPhoto(event)">✕</button>
             <div id="vizPhotoPlaceholder">
               <div class="photo-icon">📷</div>
-              <div class="photo-label">Drop a photo or click to browse</div>
-              <div class="photo-sub">AI will apply the design concept to your actual space</div>
+              <div class="photo-label">Add your space photo</div>
+              <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;">
+                <button type="button" onclick="event.stopPropagation();document.getElementById('vizPhotoInputCamera').click()" style="background:#E8481C;color:white;border:none;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 Take Photo</button>
+                <button type="button" onclick="event.stopPropagation();document.getElementById('vizPhotoInput').click()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🖼 Browse</button>
+              </div>
+              <div class="photo-sub" style="margin-top:0.4rem;">AI will apply the design concept to your actual space</div>
             </div>
           </div>
 
@@ -3009,6 +3020,11 @@ async function submitAuth() {
     if (result.error) throw result.error;
     if (authMode === 'signup' && !result.data.session) {
       showAuthSuccess('Check your email to confirm your account!');
+      trackEvent('signups_count');
+    } else if (authMode === 'signup') {
+      closeAuthModal();
+      showToast('✓ Welcome back!');
+      trackEvent('signups_count');
     } else {
       closeAuthModal();
       showToast('✓ Welcome back!');
@@ -4626,16 +4642,15 @@ async function runHealthChecks() {
       body: JSON.stringify({ prompt: 'test', imageBase64: 'dGVzdA==', size: '1024x1024' })
     });
     const d = await r.json();
-    // Key errors mean the key is missing/invalid
-    const isKeyError = !d || (d.error && (
-      d.error.toLowerCase().includes('key') ||
-      d.error.toLowerCase().includes('auth') ||
-      d.error.toLowerCase().includes('not configured')
-    ));
-    if (isKeyError) {
-      oaiEl.textContent = '● Key error'; oaiEl.style.color = 'var(--rust)';
+    const errStr = (d?.error || d?.message || '').toString().toLowerCase();
+    // Not configured / missing key = our proxy error
+    if (!d || errStr.includes('not configured') || errStr.includes('missing') || r.status === 503) {
+      oaiEl.textContent = '● Not configured'; oaiEl.style.color = 'var(--rust)';
+    // Auth / invalid key = OpenAI 401
+    } else if (r.status === 401 || errStr.includes('invalid api key') || errStr.includes('incorrect api key') || errStr.includes('unauthorized')) {
+      oaiEl.textContent = '● Invalid key'; oaiEl.style.color = 'var(--rust)';
     } else {
-      // Any other error (invalid image etc) means key is valid, API is reachable
+      // Any other response (even image errors) = key works, API reachable
       oaiEl.textContent = '● Connected'; oaiEl.style.color = 'var(--sage)';
     }
   } catch(e) {
@@ -4789,8 +4804,14 @@ Rules:
     });
     const imgData = await imgResp.json();
 
-    if (imgData.data?.[0]?.b64_json) {
-      vizResultImageSrc = 'data:image/png;base64,' + imgData.data[0].b64_json;
+    // Handle both b64_json and url response formats from OpenAI
+    const imgItem = imgData.data?.[0];
+    const imgSrc = imgItem?.b64_json
+      ? 'data:image/png;base64,' + imgItem.b64_json
+      : imgItem?.url || null;
+
+    if (imgSrc) {
+      vizResultImageSrc = imgSrc;
       incVizCount();
       trackEvent('visualizations_count');
 
@@ -5789,20 +5810,25 @@ function renderAnalyticsChart(data) {
 
 // Track events
 async function trackEvent(eventType) {
+  // Wait for DB to be ready (up to 5 seconds)
+  let tries = 0;
+  while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
   if (!dbReady) return;
   try {
     const today = new Date().toISOString().split('T')[0];
     const { error } = await db.rpc('increment_stat', { p_date: today, p_column: eventType });
     if (error) {
-      // Fallback: manual increment
-      const { data: row } = await db.from('usage_stats').select('*').eq('date', today).single();
+      // Fallback: manual upsert with increment
+      const { data: row } = await db.from('usage_stats').select('*').eq('date', today).single().catch(() => ({ data: null }));
       if (row) {
         await db.from('usage_stats').update({ [eventType]: (row[eventType] || 0) + 1 }).eq('date', today);
       } else {
-        await db.from('usage_stats').insert({ date: today, [eventType]: 1 });
+        const insertData = { date: today, estimates_count: 0, signups_count: 0, visualizations_count: 0, visitors_count: 0, paid_conversions: 0 };
+        insertData[eventType] = 1;
+        await db.from('usage_stats').insert(insertData);
       }
     }
-  } catch(e) { /* silent */ }
+  } catch(e) { console.warn('trackEvent failed:', eventType, e.message); }
 }
 
   function toggleSection(id) {
