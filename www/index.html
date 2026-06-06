@@ -1070,12 +1070,11 @@
   }
   .discover-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px var(--shadow); }
   .discover-card-img {
-    width: 100%; aspect-ratio: 4/3; object-fit: cover;
+    width: 100%; aspect-ratio: 4/3; overflow: hidden;
     background: linear-gradient(135deg, var(--cream-dark), var(--border));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 2.5rem; position: relative;
+    position: relative;
   }
-  .discover-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .discover-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; position: absolute; top: 0; left: 0; }
   .discover-card-body { padding: 0.7rem 0.85rem; }
   .discover-card-title { font-weight: 600; font-size: 0.85rem; color: #111111; margin-bottom: 0.2rem; }
   .discover-card-meta { font-size: 0.74rem; color: var(--muted); }
@@ -1417,6 +1416,41 @@
   .period-btn:hover:not(.active) { border-color: #111111; color: #111111; }
   @media (max-width: 700px) { #analyticsCards { grid-template-columns: repeat(2,1fr) !important; } }
 
+
+  /* ── COLLAPSIBLE SECTIONS ──────────────────────────────────────────────── */
+  .collapsible-header {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+    user-select: none; -webkit-user-select: none;
+  }
+  .collapsible-header:hover { opacity: 0.8; }
+  .collapsible-title { display: flex; align-items: center; gap: 0.5rem; font-family: serif; font-size: 1rem; font-weight: 600; color: #111; }
+  .collapsible-title::before { content: ''; width: 3px; height: 1em; background: #E8481C; border-radius: 2px; flex-shrink: 0; }
+  .collapsible-summary { font-size: 0.8rem; color: var(--muted); font-weight: 400; margin-top: 0.15rem; }
+  .collapsible-arrow { font-size: 0.9rem; color: #9ca3af; transition: transform 0.2s; flex-shrink: 0; }
+  .collapsible-arrow.open { transform: rotate(180deg); }
+  .collapsible-content { display: none; padding-top: 0.5rem; }
+  .collapsible-content.open { display: block; }
+  /* ── IMAGE LIGHTBOX ─────────────────────────────────────────────────────── */
+  .img-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .img-lightbox.open { display: flex; }
+  .img-lightbox img { max-width: 100%; max-height: 90vh; border-radius: 10px; object-fit: contain; }
+  .img-lightbox-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(255,255,255,0.15); border: none; color: white;
+    font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
 </style>
 </head>
 <body>
@@ -1455,8 +1489,8 @@
     ✨ Visualize
     
   </button>
-  <button class="app-tab" id="tabDiscover" onclick="switchTab('discover')" style="display:none">
-    🌟 Discover
+  <button class="app-tab" id="tabDiscover" onclick="switchTab('discover')">
+    🌟 Discover <span style="font-size:0.55rem;background:#E8481C;color:white;border-radius:4px;padding:1px 4px;vertical-align:middle;margin-left:2px;font-weight:700;">BETA</span>
   </button>
   <button class="app-tab" id="tabAdmin" onclick="switchTab('admin')" style="display:none">
     ⚙️ Admin
@@ -1632,18 +1666,50 @@
       </div>
 
       <div class="result-body">
-        <div class="section-head">🧱 Materials List</div>
-        <table class="materials-table" id="materialsTable">
-          <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Est. Cost</th></tr></thead>
-          <tbody id="materialsBody"></tbody>
-        </table>
+        <!-- Before/After at TOP -->
+        <div id="resultBeforeAfter" style="display:none;padding:0 0 0.5rem;"></div>
 
-        <div class="section-head">🪛 How to Do It</div>
-        <ol class="steps-list" id="stepsList"></ol>
+        <!-- Materials — collapsible -->
+        <div class="collapsible-header" onclick="toggleSection('materials')">
+          <div>
+            <div class="collapsible-title">🧱 Materials List</div>
+            <div class="collapsible-summary" id="materialsSummary"></div>
+          </div>
+          <span class="collapsible-arrow" id="materialsArrow">▼</span>
+        </div>
+        <div class="collapsible-content" id="materialsContent">
+          <table class="materials-table" id="materialsTable">
+            <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Est. Cost</th></tr></thead>
+            <tbody id="materialsBody"></tbody>
+          </table>
+        </div>
 
-        <div id="warningsContainer"></div>
-        <div id="tipContainer"></div>
-        <div id="resultBeforeAfter" style="display:none;padding:0 0 1rem;"></div>
+        <!-- Steps — collapsible -->
+        <div class="collapsible-header" onclick="toggleSection('steps')">
+          <div>
+            <div class="collapsible-title">🪛 How to Do It</div>
+            <div class="collapsible-summary" id="stepsSummary"></div>
+          </div>
+          <span class="collapsible-arrow" id="stepsArrow">▼</span>
+        </div>
+        <div class="collapsible-content" id="stepsContent">
+          <ol class="steps-list" id="stepsList"></ol>
+        </div>
+
+        <!-- Warnings & Tips — collapsible -->
+        <div id="warningsTipSection" style="display:none;">
+          <div class="collapsible-header" onclick="toggleSection('warnings')">
+            <div>
+              <div class="collapsible-title">⚠ Important Notes</div>
+              <div class="collapsible-summary" id="warningsSummary"></div>
+            </div>
+            <span class="collapsible-arrow" id="warningsArrow">▼</span>
+          </div>
+          <div class="collapsible-content" id="warningsContent">
+            <div id="warningsContainer"></div>
+            <div id="tipContainer"></div>
+          </div>
+        </div>
       </div>
 
       <div class="action-bar">
@@ -2436,6 +2502,26 @@ function renderResults(est) {
   document.getElementById('tipContainer').innerHTML = est.tip
     ? `<div class="info-box tip"><strong>💡 Pro Tip</strong>${est.tip}</div>` : '';
 
+  // Set collapsible summaries
+  const matCount = (est.materials || []).length;
+  const matSummaryEl = document.getElementById('materialsSummary');
+  if (matSummaryEl) matSummaryEl.textContent = matCount + ' items · tap to expand';
+  const stepCount = (est.steps || []).length;
+  const stepsSummaryEl = document.getElementById('stepsSummary');
+  if (stepsSummaryEl) stepsSummaryEl.textContent = stepCount + ' steps · tap to expand';
+  // Show warnings section only if there are warnings or tips
+  const warnSection = document.getElementById('warningsTipSection');
+  const warnCount = (est.warnings || []).length + (est.tip ? 1 : 0);
+  if (warnSection) {
+    if (warnCount > 0) {
+      warnSection.style.display = 'block';
+      const warnSummaryEl = document.getElementById('warningsSummary');
+      if (warnSummaryEl) warnSummaryEl.textContent = warnCount + ' note' + (warnCount > 1 ? 's' : '') + ' · tap to expand';
+    } else {
+      warnSection.style.display = 'none';
+    }
+  }
+
   // Show viz before/after if available
   const beforeAfterEl = document.getElementById('resultBeforeAfter');
   if (beforeAfterEl) {
@@ -2842,7 +2928,7 @@ function grantSuperAdmin() {
   currentUser.role = 'admin';
   // Show admin + discover + visualize tabs
   document.getElementById('tabAdmin').style.display = 'flex';
-  document.getElementById('tabDiscover').style.display = 'flex';
+
   document.getElementById('tabVisualize').style.display = 'flex';
 
   // Show admin badge on avatar
@@ -2873,7 +2959,7 @@ function clearUser() {
   document.getElementById('authArea').style.display = 'block';
   document.getElementById('userMenuWrap').style.display = 'none';
   document.getElementById('tabAdmin').style.display = 'none';
-  document.getElementById('tabDiscover').style.display = 'none';
+
   document.getElementById('tabVisualize').style.display = 'none';
   if (document.getElementById('sectionDiscover')?.classList.contains('active')) {
     switchTab('estimate');
@@ -3542,15 +3628,23 @@ Only list what you can clearly see was added or changed. Do not guess.`;
       panel.style.display = 'block';
     }
 
-    setTimeout(() => {
-      document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showToast('✅ Delta analysis complete — estimating additions only');
-    }, 300);
+    // Auto-submit the estimate instead of making user click again
+    showToast('🔍 Delta analysis complete — generating estimate...');
+    setTimeout(async () => {
+      try {
+        await runEstimate();
+      } catch(err) {
+        showToast('Estimate generation failed — please try again');
+      }
+    }, 500);
 
   } catch(e) {
     showToast('Could not analyse changes — loading estimate with full description');
-    // Graceful fallback — load estimate anyway with concept description
+    // Graceful fallback — switch to estimate tab, auto-submit
     switchTab('estimate');
+    setTimeout(async () => {
+      try { await runEstimate(); } catch(err) {}
+    }, 500);
   } finally {
     if (estimateBtn) { estimateBtn.disabled = false; estimateBtn.textContent = '🔧 Estimate This Design'; }
   }
@@ -4140,22 +4234,22 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Modern White Kitchen', style:'Modern', price:'$14,000–$28,000',
         desc:'White waterfall island, quartz countertops, gold pendant lighting, herringbone backsplash',
-        img:'images/kitchen_modern_1.jpg' },
+        img:'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=450&fit=crop' },
       { title:'Grey & Wood Modern Kitchen', style:'Modern', price:'$18,000–$35,000',
         desc:'Grey flat-panel cabinets, light wood accents, black barstools, large kitchen island',
-        img:'images/kitchen_modern_2.jpg' },
+        img:'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=450&fit=crop' },
       { title:'Open Plan Kitchen', style:'Modern', price:'$20,000–$40,000',
         desc:'Dark cabinetry, waterfall island, statement pendants, open plan layout',
-        img:'images/kitchen_modern_3.jpg' },
+        img:'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=450&fit=crop' },
       { title:'Mid-Century Teak Kitchen', style:'Mid-Century Modern', price:'$12,000–$22,000',
         desc:'Warm teak wood cabinets, terrazzo countertops, mint retro appliances, geometric tiles',
-        img:'images/kitchen_midcentury_1.jpg' },
+        img:'https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=600&h=450&fit=crop' },
       { title:'Mid-Century with Island', style:'Mid-Century Modern', price:'$15,000–$28,000',
         desc:'Teak flat-front cabinets, terrazzo island, vintage pendant lights, sage green accents',
-        img:'images/kitchen_midcentury_2.jpg' },
+        img:'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=450&fit=crop' },
       { title:'Retro Mid-Century Kitchen', style:'Mid-Century Modern', price:'$10,000–$20,000',
         desc:'Warm wood cabinetry, patterned backsplash tiles, pastel retro refrigerator, open shelving',
-        img:'images/kitchen_midcentury_3.jpg' },
+        img:'https://images.unsplash.com/photo-1556909190-bffdb47b95b4?w=600&h=450&fit=crop' },
     ]
   },
   {
@@ -4163,22 +4257,22 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Scandinavian Living Room', style:'Scandinavian', price:'$6,000–$14,000',
         desc:'Pale wood floors, linen sofa, minimalist coffee table, large windows, indoor plants',
-        img:'images/living_scandi_1.jpg' },
+        img:'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=450&fit=crop' },
       { title:'Light & Airy Scandi Lounge', style:'Scandinavian', price:'$5,000–$12,000',
         desc:'White walls, low-profile oak furniture, sheer curtains, natural textiles and textures',
-        img:'images/living_scandi_2.jpg' },
+        img:'https://images.unsplash.com/photo-1598928506311-c55ez637a37f?w=600&h=450&fit=crop' },
       { title:'Cozy Scandinavian Space', style:'Scandinavian', price:'$4,500–$10,000',
         desc:'Oat linen sofa, rattan side table, warm pendant light, neutral tones, hygge styling',
-        img:'images/living_scandi_3.jpg' },
+        img:'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=600&h=450&fit=crop' },
       { title:'Traditional Living Room', style:'Traditional', price:'$8,000–$20,000',
         desc:'Crown moulding, marble fireplace, tufted sofa, built-in bookshelves, warm lighting',
-        img:'images/living_traditional_1.jpg' },
+        img:'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&h=450&fit=crop' },
       { title:'Classic Fireplace Lounge', style:'Traditional', price:'$10,000–$25,000',
         desc:'Stone fireplace, coffered ceiling, leather armchairs, oriental rug, warm table lamps',
-        img:'images/living_traditional_2.jpg' },
+        img:'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=600&h=450&fit=crop' },
       { title:'Rich Traditional Study Lounge', style:'Traditional', price:'$12,000–$28,000',
         desc:'Dark wood built-ins, leather sofa, fireplace with ornate mantel, rich hardwood floors',
-        img:'images/living_traditional_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
     ]
   },
   {
@@ -4186,22 +4280,22 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Industrial Loft Bedroom', style:'Industrial', price:'$5,000–$12,000',
         desc:'Exposed brick wall, iron bed frame, Edison pendant lights, reclaimed wood floors',
-        img:'images/bedroom_industrial_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Dark Industrial Suite', style:'Industrial', price:'$6,000–$14,000',
         desc:'Dark brick accent wall, steel bed frame, moody lighting, warm wood shelving',
-        img:'images/bedroom_industrial_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Modern Industrial Bedroom', style:'Industrial', price:'$4,500–$10,000',
         desc:'Concrete feature wall, minimalist iron frame, pendant bulbs, dark atmospheric palette',
-        img:'images/bedroom_industrial_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Modern Bedroom Suite', style:'Modern', price:'$7,000–$15,000',
         desc:'Platform bed, floating nightstands, floor-to-ceiling windows, city view, muted palette',
-        img:'images/bedroom_modern_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Luxury Modern Bedroom', style:'Modern', price:'$9,000–$20,000',
         desc:'Upholstered platform bed, integrated lighting, panoramic windows, charcoal and cream tones',
-        img:'images/bedroom_modern_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Contemporary Bedroom', style:'Modern', price:'$6,000–$13,000',
         desc:'Minimalist platform bed, warm wood floors, floor-to-ceiling glazing, clean lines throughout',
-        img:'images/bedroom_modern_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
     ]
   },
   {
@@ -4209,22 +4303,22 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Farmhouse String Light Patio', style:'Farmhouse', price:'$8,000–$18,000',
         desc:'Herringbone brick pavers, string lights on wooden posts, raised timber planters, dining area',
-        img:'images/patio_farmhouse_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Rustic Outdoor Entertaining', style:'Farmhouse', price:'$10,000–$22,000',
         desc:'Brick patio, wooden pergola with string lights, raised garden beds, outdoor dining',
-        img:'images/patio_farmhouse_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Garden Party Patio', style:'Farmhouse', price:'$7,000–$16,000',
         desc:'Warm brick pavers, overhead string lights, lush raised planters, farmhouse dining table',
-        img:'images/patio_farmhouse_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Japanese Minimalist Garden', style:'Minimalist', price:'$6,000–$14,000',
         desc:'White gravel ground cover, concrete geometric planters, Japanese maple, stone pathways',
-        img:'images/garden_minimal_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Zen Garden Design', style:'Minimalist', price:'$8,000–$18,000',
         desc:'Dark fence backdrop, white gravel, bamboo, architectural plants, clean stone stepping stones',
-        img:'images/garden_minimal_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Contemporary Minimalist Garden', style:'Minimalist', price:'$5,000–$12,000',
         desc:'Gravel courtyard, sculptural concrete planters, ornamental grasses, minimalist water feature',
-        img:'images/garden_minimal_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
     ]
   },
   {
@@ -4232,13 +4326,13 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Mediterranean Villa Exterior', style:'Mediterranean', price:'$15,000–$35,000',
         desc:'Stucco walls, terracotta roof, arched doorway, bougainvillea, stone pathway, blue shutters',
-        img:'images/exterior_med_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Spanish Colonial Exterior', style:'Mediterranean', price:'$20,000–$45,000',
         desc:'White render, warm lighting, climbing vines, arched windows, terracotta pots, dusk setting',
-        img:'images/exterior_med_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Mediterranean Courtyard Home', style:'Mediterranean', price:'$18,000–$40,000',
         desc:'Stucco finish, blue-green shutters, arched entry, lush courtyard planting, stone driveway',
-        img:'images/exterior_med_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
     ]
   },
   {
@@ -4246,13 +4340,13 @@ const ALL_DISCOVER_ITEMS = [
     items: [
       { title:'Bohemian Bathroom Retreat', style:'Bohemian', price:'$4,000–$10,000',
         desc:'Patterned encaustic floor tiles, freestanding tub, rattan mirror, warm Edison sconces, plants',
-        img:'images/bathroom_boho_1.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Earthy Boho Bathroom', style:'Bohemian', price:'$5,000–$12,000',
         desc:'Geometric tile floor, statement freestanding bath, hanging plants, rattan accents, warm tones',
-        img:'images/bathroom_boho_2.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
       { title:'Natural Bohemian Bath', style:'Bohemian', price:'$4,500–$11,000',
         desc:'Terracotta and cream encaustic tiles, copper fixtures, trailing plants, rattan shelving',
-        img:'images/bathroom_boho_3.jpg' },
+        img:'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=600&h=450&fit=crop' },
     ]
   },
 ];
@@ -5712,7 +5806,16 @@ async function trackEvent(eventType) {
   } catch(e) { /* silent */ }
 }
 
-  function togglePwd(inputId, btn) {
+  function toggleSection(id) {
+  const content = document.getElementById(id + 'Content');
+  const arrow = document.getElementById(id + 'Arrow');
+  if (!content) return;
+  const isOpen = content.classList.contains('open');
+  content.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+function togglePwd(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) return;
     if (input.type === 'password') {
@@ -5724,4 +5827,19 @@ async function trackEvent(eventType) {
     }
   }
 
+function openImgLightbox(src) {
+  document.getElementById('imgLightboxSrc').src = src;
+  document.getElementById('imgLightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeImgLightbox() {
+  document.getElementById('imgLightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 </script>
+  <div class="img-lightbox" id="imgLightbox" onclick="closeImgLightbox()">
+    <button class="img-lightbox-close" onclick="event.stopPropagation();closeImgLightbox()">✕</button>
+    <img id="imgLightboxSrc" src="" alt="" onclick="event.stopPropagation()">
+  </div>
+
