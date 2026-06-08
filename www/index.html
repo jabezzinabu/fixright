@@ -1532,6 +1532,12 @@
   <div class="form-card">
     <div class="form-body">
 
+      <!-- DESCRIPTION -->
+      <div class="field">
+        <label>Describe the project <span>(be as specific as you like)</span></label>
+        <textarea id="description" placeholder="e.g. Replace the tile floor in a 12×10 ft bathroom. The existing tile is cracked and needs full removal. I want large-format porcelain tiles..." oninput="onDescriptionInput(this.value)"></textarea>
+      </div>
+
       <!-- PHOTO DROP -->
       <div class="photo-zone" id="photoZone">
         <input type="file" id="photoInput" accept="image/*" onchange="handleFile(this.files[0])">
@@ -1540,19 +1546,12 @@
         <button class="photo-clear" id="photoClear" onclick="clearPhoto(event)">✕</button>
         <div id="photoPlaceholder">
           <div class="photo-icon">📷</div>
-          <div class="photo-label">Add a photo</div>
+          <div class="photo-label">Add a photo <span style="font-size:0.78rem;color:var(--muted);font-weight:400;">(optional — triggers AI visualization)</span></div>
           <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;">
             <button type="button" onclick="event.stopPropagation();document.getElementById('photoInputCamera').click()" style="background:#E8481C;color:white;border:none;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 Take Photo</button>
             <button type="button" onclick="event.stopPropagation();document.getElementById('photoInput').click()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🖼 Browse</button>
           </div>
-          <div class="photo-sub" style="margin-top:0.4rem;">Optional — helps improve accuracy</div>
         </div>
-      </div>
-
-      <!-- DESCRIPTION -->
-      <div class="field">
-        <label>Describe the project <span>(be as specific as you like)</span></label>
-        <textarea id="description" placeholder="e.g. Replace the tile floor in a 12×10 ft bathroom. The existing tile is cracked and needs full removal. I want large-format porcelain tiles..." oninput="onDescriptionInput(this.value)"></textarea>
       </div>
 
       <!-- MEASUREMENT PANEL (shown contextually) -->
@@ -1615,11 +1614,11 @@
     <div class="combined-viz-panel" id="combinedVizPanel">
       <div class="combined-viz-before-after">
         <div class="combined-viz-side">
-          <img id="combinedVizBefore" src="" alt="Before" onclick="openLightbox(this.src,'Before')">
+          <img id="combinedVizBefore" src="" alt="Before" onclick="openImgLightbox(this.src)">
           <div class="combined-viz-badge">Before ⤢</div>
         </div>
         <div class="combined-viz-side">
-          <img id="combinedVizAfter" src="" alt="After" onclick="openLightbox(this.src,'After — AI Visualization')">
+          <img id="combinedVizAfter" src="" alt="After" onclick="openImgLightbox(this.src)">
           <div class="combined-viz-badge">After ⤢</div>
         </div>
       </div>
@@ -2931,8 +2930,7 @@ function grantSuperAdmin() {
   currentUser.role = 'admin';
   // Show admin + discover + visualize tabs
   document.getElementById('tabAdmin').style.display = 'flex';
-
-  document.getElementById('tabVisualize').style.display = 'flex';
+  // Visualize tab hidden — viz is now built into estimate flow
 
   // Show admin badge on avatar
   document.getElementById('userAvatar').style.background = 'linear-gradient(135deg, var(--gold), #e8a820)';
@@ -5654,7 +5652,7 @@ async function sendPasswordReset() {
 
 
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
-function openLightbox(src, label) {
+function openImgLightbox(src) {
   document.getElementById('lightboxImg').src = src;
   document.getElementById('lightboxLabel').textContent = label || '';
   document.getElementById('lightbox').classList.add('open');
@@ -6045,6 +6043,9 @@ async function loadDemoEstimate() {
       ],
       tip: 'Rent a tile saw for clean cuts — it will save you hours of work and give professional results.',
     };
+    // Add sample before/after images to demo
+    demo.beforeImage = 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=600&h=450&fit=crop&auto=format';
+    demo.vizImage = 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=600&h=450&fit=crop&auto=format';
     currentEstimate = demo;
     renderResults(demo);
     const banner = document.getElementById('sharedBanner');
