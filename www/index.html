@@ -2275,7 +2275,7 @@ window.addEventListener('load', () => {
   initSupabase();
   checkSession();
   // Track page visit (anonymous or logged in)
-  setTimeout(() => trackEvent('visitors_count'), 2000);
+  setTimeout(() => { if (!currentUser || (currentUser?.role !== 'admin' && currentUser?.email !== 'jabezzinabu@gmail.com')) trackEvent('visitors_count'); }, 2000);
 
   // Check for shared estimate via ?s= short link
   const params = new URLSearchParams(location.search);
@@ -2534,11 +2534,11 @@ function renderResults(est) {
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">';
       if (est.beforeImage) {
         html += `<div><div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">Before</div>
-          <img src="${est.beforeImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;"></div>`;
+          <img src="${est.beforeImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;cursor:pointer;" onclick="openImgLightbox('${est.beforeImage}')"></div>`;
       }
       if (est.vizImage) {
-        html += `<div><div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">After</div>
-          <img src="${est.vizImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;"></div>`;
+        html += `<div><div style="font-size:0.72rem;font-weight:600;color:#E8481C;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">After</div>
+          <img src="${est.vizImage}" style="width:100%;border-radius:10px;display:block;object-fit:cover;aspect-ratio:4/3;cursor:pointer;" onclick="openImgLightbox('${est.vizImage}')"></div>`;
       }
       html += '</div></div>';
       beforeAfterEl.innerHTML = html;
@@ -5890,6 +5890,8 @@ function renderAnalyticsChart(data) {
 
 // Track events
 async function trackEvent(eventType) {
+  // Never track admin/super-admin activity
+  if (currentUser?.role === 'admin' || currentUser?.email === 'jabezzinabu@gmail.com') return;
   // Wait for DB to be ready (up to 5 seconds)
   let tries = 0;
   while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
