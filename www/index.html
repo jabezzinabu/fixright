@@ -1462,7 +1462,7 @@
   <div class="header-actions">
     <span class="db-status" id="dbStatus" title="Database status"></span>
 
-    <button class="btn-history" onclick="toggleDrawer()">
+    <button class="btn-history" id="savedBtn" onclick="toggleDrawer()">
       📋 Saved
       <span class="history-count" id="savedCount">0</span>
     </button>
@@ -1595,7 +1595,7 @@
       <button class="btn-estimate" id="submitBtn" onclick="runCombinedEstimate()">
         🔧 Get My Estimate
       </button>
-      <button type="button" id="demoBtn" onclick="loadDemoEstimate()" style="width:100%;background:none;border:1px solid var(--border);border-radius:99px;padding:0.6rem;font-size:0.82rem;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.5rem;">
+      <button type="button" id="demoBtn" onclick="loadDemoEstimate()" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:99px;padding:0.7rem;font-size:0.85rem;color:#E8481C;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.6rem;transition:background 0.2s;">
         👀 See a sample estimate
       </button>
     </div>
@@ -2559,6 +2559,8 @@ function renderResults(est) {
 async function saveEstimate() {
   if (!currentEstimate) { showToast('Nothing to save yet'); return; }
   if (!currentUser) { showToast('Please sign in to save estimates'); showAuthModal(); return; }
+  // Show saving state on all save buttons
+  document.querySelectorAll('[onclick*="saveEstimate"]').forEach(b => { b._origText = b.textContent; b.disabled = true; b.textContent = '💾 Saving...'; });
 
   const row = {
     user_id: currentUser.id,
@@ -2581,7 +2583,7 @@ async function saveEstimate() {
     try {
       const { error } = await db.from('estimates').insert(row);
       if (error) throw error;
-      showToast('✓ Saved to your account!');
+      showToast('✓ Saved!');
       loadSavedEstimates();
     } catch(e) {
       console.error('Save failed:', e?.message || e?.details || JSON.stringify(e));
@@ -2596,6 +2598,9 @@ async function saveEstimate() {
 
 async function loadSavedEstimates() {
   if (!drawerOpen) return;
+  // Show loading skeleton
+  const list = document.getElementById('savedList');
+  if (list) list.innerHTML = '<div style="padding:1.25rem;text-align:center;color:var(--muted);font-size:0.85rem;">⏳ Loading your estimates...</div>';
 
   if (dbReady) {
     try {
@@ -2694,6 +2699,9 @@ function renderSavedList() {
 function loadSaved(id) {
   const est = savedEstimates.find(x => String(x.id) === String(id));
   if (!est) return;
+
+  // Show loading toast
+  showToast('⏳ Loading estimate...');
 
   // Restore estimate result
   currentEstimate = est;
@@ -2853,7 +2861,9 @@ function shareNative() {
 // ─── UI HELPERS ───────────────────────────────────────────────────────────────
 function setLoading(on) {
   document.getElementById('loading').classList.toggle('visible', on);
-  document.getElementById('submitBtn').disabled = on;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = on;
+  btn.textContent = on ? '⏳ Generating estimate...' : '🔧 Get My Estimate';
 }
 function hideResults() {
   document.getElementById('results').classList.remove('visible');
@@ -3438,7 +3448,9 @@ async function buyVizPackage(credits) {
   const priceId = VIZ_PRICE_IDS[credits];
   if (!priceId) { showToast('Invalid package'); return; }
 
-  showToast('Opening checkout...');
+  // Disable all package buttons and show loading
+  document.querySelectorAll('#upgradeModal button[onclick^="buyVizPackage"]').forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+  showToast('⏳ Opening checkout...');
   try {
     const resp = await fetch('/api/stripe-checkout', {
       method: 'POST',
@@ -4799,16 +4811,22 @@ async function runCombinedEstimate() {
   if (!desc && !imageBase64) { showToast('Please add a photo or description'); return; }
   if (!checkEstPaywall()) return;
 
+  // Show loading state immediately
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Generating estimate...';
+
   // Auto-viz if photo is present and user has credits
   if (imageBase64) {
     const hasCredits = isPro() || await checkVizCredits();
     if (hasCredits) {
       await generateCombinedViz();
     } else {
-      // No credits — show package modal, still run estimate after
+      // No credits — show package modal, reset button
+      submitBtn.disabled = false;
+      submitBtn.textContent = '🔧 Get My Estimate';
       showVizPackageModal();
-      await runEstimate();
-      setTimeout(showSavePrompt, 1200);
+      return;
     }
   } else {
     // No photo — just estimate
@@ -5982,6 +6000,8 @@ async function submitPopupSignup() {
 
 // ─── DEMO ESTIMATE ────────────────────────────────────────────────────────────
 async function loadDemoEstimate() {
+  const btn = document.getElementById('demoBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading sample...'; }
   // Try to load admin-selected demo estimate
   try {
     let demoId = null;
@@ -6058,6 +6078,8 @@ async function loadDemoEstimate() {
     setTimeout(showSignupPopup, 2000);
   } catch(e) {
     showToast('Could not load demo — try running your own estimate!');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '👀 See a sample estimate'; }
   }
 }
 
