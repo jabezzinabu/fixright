@@ -1475,6 +1475,7 @@
         <div class="dropdown-email" id="dropdownEmail"></div>
         <div class="dropdown-item" onclick="toggleDrawer(); toggleUserMenu()">📋 Saved Estimates</div>
         <a href="mailto:hello@diyestimator.com" class="dropdown-item" style="text-decoration:none;color:inherit;">✉️ Contact Us</a>
+        <a href="https://contractor.diyestimator.com" target="_blank" class="dropdown-item" style="text-decoration:none;color:inherit;">🏗️ For Contractors →</a>
         <div class="dropdown-item danger" onclick="signOut()">🚪 Sign Out</div>
       </div>
     </div>
@@ -1592,18 +1593,11 @@
         </div>
       </div>
 
-      <!-- VIZ TOGGLE -->
-      <div class="viz-toggle-row" id="vizToggleRow" onclick="toggleVizMode()">
-        <div class="viz-toggle-switch" id="vizToggleSwitch"></div>
-        <div class="viz-toggle-label">
-          <strong>✨ Also visualize this project</strong>
-          <span>See the renovation on your photo + get the estimate</span>
-        </div>
-        <span class="viz-toggle-badge">PRO</span>
-      </div>
-
       <button class="btn-estimate" id="submitBtn" onclick="runCombinedEstimate()">
         🔧 Get My Estimate
+      </button>
+      <button type="button" id="demoBtn" onclick="loadDemoEstimate()" style="width:100%;background:none;border:1px solid var(--border);border-radius:99px;padding:0.6rem;font-size:0.82rem;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.5rem;">
+        👀 See a sample estimate
       </button>
     </div>
 
@@ -2905,8 +2899,8 @@ async function setUser(user) {
 
   // Check admin/pro role
   await checkUserRole(user);
-  // Load free viz status
-  await checkFreeVizUsed();
+  // Load viz credits
+  await loadVizCredits();
   updateFreeNotice();
 }
 
@@ -3020,10 +3014,18 @@ async function submitAuth() {
     if (authMode === 'signup' && !result.data.session) {
       showAuthSuccess('Check your email to confirm your account!');
       trackEvent('signups_count');
+      // Grant 3 free viz credits
+      if (result.data.user) {
+        await db.from('profiles').upsert({ id: result.data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
+      }
     } else if (authMode === 'signup') {
       closeAuthModal();
-      showToast('✓ Welcome back!');
+      showToast('✓ Welcome! You have 3 free visualizations.');
       trackEvent('signups_count');
+      if (result.data.user) {
+        await db.from('profiles').upsert({ id: result.data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
+        _vizCredits = 3;
+      }
     } else {
       closeAuthModal();
       showToast('✓ Welcome back!');
@@ -3123,37 +3125,60 @@ function switchTab(tab) {
 }
 
 // ─── VIZ USAGE TRACKING ───────────────────────────────────────────────────────
-let _freeVizUsed = false; // cached from Supabase
+let _vizCredits = 0; // cached from Supabase
 
-async function checkFreeVizUsed() {
-  if (!currentUser || !dbReady) return false;
+async function loadVizCredits() {
+  if (!currentUser || !dbReady) return 0;
   try {
-    const { data } = await db.from('profiles').select('free_viz_used').eq('id', currentUser.id).single();
-    _freeVizUsed = data?.free_viz_used || false;
-    return _freeVizUsed;
-  } catch(e) { return false; }
+    const { data } = await db.from('profiles').select('viz_credits').eq('id', currentUser.id).single();
+    _vizCredits = data?.viz_credits ?? 0;
+    return _vizCredits;
+  } catch(e) { return 0; }
 }
 
-async function markFreeVizUsed() {
-  _freeVizUsed = true;
+async function checkVizCredits() {
+  await loadVizCredits();
+  return _vizCredits > 0;
+}
+
+async function deductVizCredit() {
   if (!currentUser || !dbReady) return;
+  _vizCredits = Math.max(0, _vizCredits - 1);
   try {
-    await db.from('profiles').upsert({ id: currentUser.id, free_viz_used: true }, { onConflict: 'id' });
+    await db.from('profiles').update({ viz_credits: _vizCredits }).eq('id', currentUser.id);
   } catch(e) { /* silent */ }
 }
 
-function getVizCount() { return _freeVizUsed ? 1 : 0; }
-function incVizCount() { markFreeVizUsed(); }
+async function addVizCredits(amount) {
+  if (!currentUser || !dbReady) return;
+  _vizCredits += amount;
+  try {
+    await db.from('profiles').update({
+      viz_credits: _vizCredits,
+      viz_credits_total: db.raw ? undefined : undefined
+    }).eq('id', currentUser.id);
+    // Also update total
+    const { data } = await db.from('profiles').select('viz_credits_total').eq('id', currentUser.id).single();
+    const newTotal = (data?.viz_credits_total || 0) + amount;
+    await db.from('profiles').update({ viz_credits: _vizCredits, viz_credits_total: newTotal }).eq('id', currentUser.id);
+  } catch(e) { /* silent */ }
+}
+
+// Backward compat shims
+function getVizCount() { return _vizCredits > 0 ? 0 : 1; } // 0 = has credits, 1 = no credits
+async function checkFreeVizUsed() { await loadVizCredits(); return _vizCredits <= 0; }
+function incVizCount() { deductVizCredit(); }
+function markFreeVizUsed() { deductVizCredit(); }
 
 function updateFreeNotice() {
   const notice = document.getElementById('vizFreeNotice');
   if (!notice) return;
   if (!currentUser) {
     notice.style.display = 'inline-flex';
-    notice.textContent = '🔒 Sign in for 1 free visualization';
-  } else if (!_freeVizUsed) {
+    notice.textContent = '🔒 Sign in for 3 free visualizations';
+  } else if (_vizCredits > 0) {
     notice.style.display = 'inline-flex';
-    notice.textContent = '🎁 First visualization is free';
+    notice.textContent = `🎁 ${_vizCredits} free visualization${_vizCredits > 1 ? 's' : ''} remaining`;
   } else {
     notice.style.display = 'none';
   }
@@ -3387,34 +3412,36 @@ function shareViz() {
 
 // ─── UPGRADE MODAL ────────────────────────────────────────────────────────────
 function showUpgradeModal() {
+  if (!currentUser) { showAuthModal(); return; }
+  document.getElementById('upgradeModal').classList.add('open');
+}
+function showVizPackageModal() {
+  if (!currentUser) { showAuthModal(); return; }
   document.getElementById('upgradeModal').classList.add('open');
 }
 function closeUpgradeModal() {
   document.getElementById('upgradeModal').classList.remove('open');
 }
-async function goUpgrade(plan) {
+
+const VIZ_PRICE_IDS = {
+  3:  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy',
+  5:  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy',
+  10: 'price_1Tg9olRVJ2WCAk1HGWriE1hJ',
+  25: 'price_1Tg9pIRVJ2WCAk1HVQwY1BjK',
+};
+
+async function buyVizPackage(credits) {
   if (!currentUser) {
-    showToast('Please sign in first to start your free trial');
+    showToast('Please sign in first');
     closeUpgradeModal();
     showAuthModal();
     return;
   }
+  const priceId = VIZ_PRICE_IDS[credits];
+  if (!priceId) { showToast('Invalid package'); return; }
 
-  const btn = document.querySelector('.btn-upgrade');
-  if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
-
+  showToast('Opening checkout...');
   try {
-    // Get price IDs from Supabase
-    const weeklyId = await getStripeConfig('stripe_price_weekly');
-    const monthlyId = await getStripeConfig('stripe_price_monthly');
-    const priceId = (plan === 'monthly') ? monthlyId : weeklyId;
-
-    if (!priceId) {
-      showToast('Payment setup error — please contact support');
-      if (btn) { btn.textContent = 'Start Free Trial — 3 Days Free'; btn.disabled = false; }
-      return;
-    }
-
     const resp = await fetch('/api/stripe-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3422,10 +3449,12 @@ async function goUpgrade(plan) {
         priceId,
         userId: currentUser.id,
         email: currentUser.email,
-        plan: plan || 'weekly'
+        mode: 'payment',
+        vizCredits: credits,
+        successUrl: window.location.origin + '/?viz_purchased=' + credits,
+        cancelUrl: window.location.href
       })
     });
-
     const data = await resp.json();
     if (data.url) {
       window.location.href = data.url;
@@ -3434,9 +3463,26 @@ async function goUpgrade(plan) {
     }
   } catch(e) {
     showToast('Error: ' + e.message);
-    if (btn) { btn.textContent = 'Start Free Trial — 3 Days Free'; btn.disabled = false; }
   }
 }
+
+// Handle return from Stripe after purchase
+(function checkVizPurchaseReturn() {
+  const params = new URLSearchParams(location.search);
+  const purchased = params.get('viz_purchased');
+  if (purchased) {
+    const credits = parseInt(purchased);
+    window.history.replaceState({}, document.title, location.pathname);
+    // Credits will be added by webhook — just show a toast
+    setTimeout(() => {
+      showToast(`✅ ${credits} visualizations added to your account!`);
+      loadVizCredits().then(updateFreeNotice);
+    }, 1500);
+  }
+})();
+
+// Legacy compat
+async function goUpgrade(plan) { showVizPackageModal(); }
 
 async function getStripeConfig(key) {
   try {
@@ -3750,7 +3796,7 @@ async function loadAdminEstimates() {
   const empty = document.getElementById('estimatesEmpty');
   try {
     const { data, error } = await db.from('estimates')
-      .select('title, price_range, region, user_id, created_at')
+      .select('id, title, price_range, region, user_id, created_at')
       .order('created_at', { ascending: false })
       .limit(200);
     loading.style.display = 'none';
@@ -3778,6 +3824,7 @@ function renderAdminEstimatesPage() {
       <td>${formatRegion(e.region)}</td>
       <td style="font-family:monospace;font-size:0.75rem;color:var(--muted)">${(e.user_id||'').slice(0,12)}...</td>
       <td style="color:var(--muted)">${new Date(e.created_at).toLocaleDateString()}</td>
+      <td><button onclick="setDemoEstimate('${e.id}')" style="font-size:0.72rem;background:#f3f4f6;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Set Demo</button></td>
     </tr>`).join('');
   // Pagination controls
   let pag = document.getElementById('estPagination');
@@ -3794,6 +3841,14 @@ function renderAdminEstimatesPage() {
       <span style="padding:0.3rem 0.5rem;font-weight:600;color:#111;">Page ${_adminEstPage + 1} / ${totalPages}</span>
       <button onclick="adminEstNext()" ${_adminEstPage >= totalPages - 1 ? 'disabled' : ''} style="padding:0.3rem 0.7rem;border:1px solid var(--border);border-radius:6px;background:${_adminEstPage>=totalPages-1?'#f3f4f6':'white'};cursor:${_adminEstPage>=totalPages-1?'default':'pointer'};font-size:0.8rem;">Next →</button>
     </div>`;
+}
+
+async function setDemoEstimate(id) {
+  if (!dbReady) return;
+  try {
+    await db.from('app_config').upsert({ key: 'demo_estimate_id', value: id }, { onConflict: 'key' });
+    showToast('✅ Demo estimate set!');
+  } catch(e) { showToast('Error: ' + e.message); }
 }
 
 function adminEstPrev() { if (_adminEstPage > 0) { _adminEstPage--; renderAdminEstimatesPage(); } }
@@ -3990,38 +4045,62 @@ const _origSwitchTab = switchTab;
 
 
 <!-- UPGRADE MODAL -->
+<!-- POST-ESTIMATE SIGNUP POPUP -->
+<div class="modal-overlay" id="signupPopup" style="display:none;">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#E8481C,#ff6b3d);">
+      <h3>🎁 Get 3 Free Visualizations</h3>
+      <button class="modal-close" onclick="closeSignupPopup()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.5rem;">
+      <p style="color:#374151;font-size:0.9rem;margin-bottom:1.25rem;line-height:1.5;">Sign up free and see your project in photorealistic before &amp; after — <strong>3 times, on us.</strong></p>
+      <div id="signupPopupError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:0.6rem 0.85rem;font-size:0.82rem;color:#dc2626;margin-bottom:0.75rem;"></div>
+      <input type="email" id="popupEmail" placeholder="your@email.com" style="width:100%;padding:0.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:'DM Sans',sans-serif;box-sizing:border-box;margin-bottom:0.65rem;outline:none;">
+      <input type="password" id="popupPassword" placeholder="Choose a password" style="width:100%;padding:0.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.92rem;font-family:'DM Sans',sans-serif;box-sizing:border-box;margin-bottom:0.85rem;outline:none;">
+      <button id="popupSignupBtn" onclick="submitPopupSignup()" style="width:100%;background:#E8481C;color:white;border:none;border-radius:99px;padding:0.9rem;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(232,72,28,0.35);">
+        Sign Up Free — Get 3 Visualizations
+      </button>
+      <button onclick="closeSignupPopup()" style="width:100%;background:none;border:none;color:var(--muted);font-size:0.82rem;cursor:pointer;padding:0.6rem 0;font-family:'DM Sans',sans-serif;margin-top:0.25rem;">No thanks</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="upgradeModal">
   <div class="modal">
-    <div class="modal-header" style="background: linear-gradient(135deg, #1c2b3a 0%, #2a3e28 100%);">
-      <h3>✨ Unlock Design Visualizations</h3>
+    <div class="modal-header" style="background:linear-gradient(135deg,#E8481C,#ff6b3d);">
+      <h3>✨ Get More Visualizations</h3>
       <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
     </div>
-    <div class="modal-body">
-      <div class="upgrade-modal-body">
-        <div class="upgrade-icon">🏠</div>
-        <h3>You've used your free visualization</h3>
-        <p>Upgrade to DIY Estimator Pro to generate unlimited photorealistic renderings of your projects.</p>
-        <div class="upgrade-price">
-          <div class="price">$9.99<span style="font-size:1rem;color:rgba(255,255,255,0.5)">/wk</span></div>
-          <div class="price-sub">or $29.99/month — save 25%</div>
-        </div>
-        <div class="upgrade-features">
-          <div class="upgrade-feature">Unlimited photorealistic visualizations</div>
-          <div class="upgrade-feature">Unlimited AI estimates</div>
-          <div class="upgrade-feature">Save &amp; sync across all devices</div>
-          <div class="upgrade-feature">Share estimates with contractors</div>
-          <div class="upgrade-feature">ZIP-code level pricing</div>
-        </div>
-        <button class="btn-upgrade" onclick="goUpgrade('weekly')" style="width:100%;margin-bottom:0.5rem;">
-          Start Free Trial — 3 Days Free
-          <span style="display:block;font-size:0.78rem;opacity:0.8;font-weight:400;margin-top:2px;">then $9.99/week · cancel anytime</span>
+    <div class="modal-body" style="padding:1.25rem;">
+      <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.25rem;">You've used all your free visualizations. Buy a package to keep seeing your projects come to life.</p>
+      <div style="display:grid;gap:0.65rem;">
+        <button onclick="buyVizPackage(3)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-weight:700;color:#111;">3 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$1.33 each</div></div>
+            <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$3.99</div>
+          </div>
         </button>
-        <button onclick="goUpgrade('monthly')" style="width:100%;background:rgba(255,255,255,0.1);color:white;border:1.5px solid rgba(255,255,255,0.2);border-radius:9px;padding:0.75rem;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;margin-bottom:0.75rem;">
-          Monthly — $29.99/mo
-          <span style="display:block;font-size:0.75rem;opacity:0.7;font-weight:400;margin-top:2px;">Save 25% · includes 3-day free trial</span>
+        <button onclick="buyVizPackage(5)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-weight:700;color:#111;">5 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$1.00 each</div></div>
+            <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$4.99</div>
+          </div>
         </button>
-        <button class="btn-upgrade-skip" onclick="closeUpgradeModal()">Maybe later</button>
+        <button onclick="buyVizPackage(10)" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;position:relative;" >
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#E8481C;color:white;font-size:0.65rem;font-weight:700;padding:2px 10px;border-radius:99px;">MOST POPULAR</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-weight:700;color:#111;">10 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$0.90 each</div></div>
+            <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$8.99</div>
+          </div>
+        </button>
+        <button onclick="buyVizPackage(25)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-weight:700;color:#111;">25 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$0.60 each — best value</div></div>
+            <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$14.99</div>
+          </div>
+        </button>
       </div>
+      <button onclick="closeUpgradeModal()" style="width:100%;background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.75rem 0 0;font-family:'DM Sans',sans-serif;">Maybe later</button>
     </div>
   </div>
 </div>
@@ -4722,15 +4801,19 @@ async function runCombinedEstimate() {
   if (!desc && !imageBase64) { showToast('Please add a photo or description'); return; }
   if (!checkEstPaywall()) return;
 
-  if (vizModeEnabled && imageBase64) {
-    // VIZ FIRST — check paywall
-    if (!isPro() && getVizCount() >= 1) {
-      showUpgradeModal();
-      return;
+  // Auto-viz if photo is present and user has credits
+  if (imageBase64) {
+    const hasCredits = isPro() || await checkVizCredits();
+    if (hasCredits) {
+      await generateCombinedViz();
+    } else {
+      // No credits — show package modal, still run estimate after
+      showVizPackageModal();
+      await runEstimate();
+      setTimeout(showSavePrompt, 1200);
     }
-    await generateCombinedViz();
   } else {
-    // No viz — just run estimate directly
+    // No photo — just estimate
     await runEstimate();
     setTimeout(showSavePrompt, 1200);
   }
@@ -5838,6 +5921,156 @@ async function trackEvent(eventType) {
   content.classList.toggle('open');
   if (arrow) arrow.classList.toggle('open');
 }
+
+
+// ─── SIGNUP POPUP ─────────────────────────────────────────────────────────────
+let _signupPopupShown = false;
+
+function showSignupPopup() {
+  if (_signupPopupShown || currentUser) return;
+  _signupPopupShown = true;
+  const popup = document.getElementById('signupPopup');
+  if (popup) popup.style.display = 'flex';
+}
+
+function closeSignupPopup() {
+  const popup = document.getElementById('signupPopup');
+  if (popup) popup.style.display = 'none';
+  localStorage.setItem('diy_popup_dismissed', '1');
+}
+
+async function submitPopupSignup() {
+  const email = document.getElementById('popupEmail').value.trim();
+  const password = document.getElementById('popupPassword').value;
+  const errEl = document.getElementById('signupPopupError');
+  const btn = document.getElementById('popupSignupBtn');
+
+  if (!email || !password) { errEl.textContent = 'Please enter email and password'; errEl.style.display='block'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display='block'; return; }
+
+  btn.textContent = 'Creating account...'; btn.disabled = true;
+  errEl.style.display = 'none';
+
+  try {
+    const { data, error } = await db.auth.signUp({ email, password });
+    if (error) throw error;
+
+    // Grant 3 free viz credits
+    if (data.user) {
+      await db.from('profiles').upsert({ id: data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
+      trackEvent('signups_count');
+    }
+
+    closeSignupPopup();
+    if (data.session) {
+      setUser(data.user);
+      showToast('🎉 Welcome! You have 3 free visualizations.');
+    } else {
+      showToast('✅ Account created! Check your email to confirm.');
+    }
+  } catch(e) {
+    const msg = e.message || '';
+    if (msg.includes('already registered') || msg.includes('already exists')) {
+      errEl.textContent = 'Email already registered. Try signing in instead.';
+    } else {
+      errEl.textContent = msg || 'Sign up failed. Please try again.';
+    }
+    errEl.style.display = 'block';
+    btn.textContent = 'Sign Up Free — Get 3 Visualizations'; btn.disabled = false;
+  }
+}
+
+// ─── DEMO ESTIMATE ────────────────────────────────────────────────────────────
+async function loadDemoEstimate() {
+  // Try to load admin-selected demo estimate
+  try {
+    let demoId = null;
+    if (dbReady) {
+      const { data } = await db.from('app_config').select('value').eq('key', 'demo_estimate_id').single();
+      demoId = data?.value;
+    }
+
+    if (demoId && dbReady) {
+      const { data: est } = await db.from('estimates').select('*').eq('id', demoId).single();
+      if (est) {
+        const estData = {
+          title: est.title,
+          priceRange: est.price_range,
+          difficulty: est.difficulty,
+          timeline: est.timeline,
+          materials: est.materials,
+          steps: est.steps,
+          warnings: est.warnings,
+          tip: est.tip,
+          isDemo: true
+        };
+        currentEstimate = estData;
+        renderResults(estData);
+        document.getElementById('sharedBanner') && (document.getElementById('sharedBanner').innerHTML = '🎯 This is a sample estimate — <a href="#" onclick="clearResults();return false;" style="color:white;">try your own project</a>');
+        document.getElementById('sharedBanner')?.classList.add('visible');
+        showSignupPopup();
+        return;
+      }
+    }
+
+    // Fallback: hardcoded demo
+    const demo = {
+      title: 'Replace Bathroom Tile Floor (10×8 ft)',
+      priceRange: '$850 – $1,400',
+      difficulty: 'Moderate',
+      timeline: '2–3 days',
+      isDemo: true,
+      materials: [
+        { item: 'Porcelain floor tiles (12×24")', qty: 12, unit: 'boxes', cost: '$480' },
+        { item: 'Tile adhesive / thin-set mortar', qty: 3, unit: 'bags', cost: '$75' },
+        { item: 'Grout (sanded, grey)', qty: 2, unit: 'bags', cost: '$40' },
+        { item: 'Tile spacers', qty: 1, unit: 'pack', cost: '$8' },
+        { item: 'Cement backer board', qty: 4, unit: 'sheets', cost: '$60' },
+        { item: 'Waterproofing membrane', qty: 1, unit: 'roll', cost: '$55' },
+        { item: 'Grout sealer', qty: 1, unit: 'bottle', cost: '$18' },
+        { item: 'Tools & supplies', qty: 1, unit: 'set', cost: '$90' },
+      ],
+      steps: [
+        'Remove existing tile and clean subfloor thoroughly',
+        'Inspect and repair any soft spots in the subfloor',
+        'Install cement backer board and waterproofing membrane',
+        'Plan tile layout starting from center of room',
+        'Apply thin-set and lay tiles with consistent spacing',
+        'Allow adhesive to cure for 24 hours before grouting',
+        'Apply grout, clean excess, and seal after 72 hours',
+      ],
+      warnings: [
+        'Turn off water supply before removing old tile near plumbing',
+        'Ensure subfloor is level — use self-leveling compound if needed',
+      ],
+      tip: 'Rent a tile saw for clean cuts — it will save you hours of work and give professional results.',
+    };
+    currentEstimate = demo;
+    renderResults(demo);
+    const banner = document.getElementById('sharedBanner');
+    if (banner) {
+      banner.innerHTML = '🎯 This is a sample estimate — <a href="#" onclick="clearResults(event)" style="color:white;font-weight:600;">try your own project</a>';
+      banner.classList.add('visible');
+    }
+    setTimeout(showSignupPopup, 2000);
+  } catch(e) {
+    showToast('Could not load demo — try running your own estimate!');
+  }
+}
+
+function clearResults(e) {
+  if (e) e.preventDefault();
+  document.getElementById('results').classList.remove('visible');
+  const banner = document.getElementById('sharedBanner');
+  if (banner) banner.classList.remove('visible');
+  currentEstimate = null;
+}
+
+// Show signup popup after first estimate (if not signed in)
+const _origRenderResults = renderResults;
+// We hook into showSavePrompt instead
+const _origShowSavePrompt = typeof showSavePrompt === 'function' ? showSavePrompt : null;
+
 
 function togglePwd(inputId, btn) {
     const input = document.getElementById(inputId);

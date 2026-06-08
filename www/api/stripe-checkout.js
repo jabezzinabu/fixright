@@ -13,6 +13,14 @@ async function getConfig(key) {
   return d?.[0]?.value || null;
 }
 
+// Map price IDs to viz credit amounts
+const VIZ_CREDIT_MAP = {
+  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy': 3,
+  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy': 5,
+  'price_1Tg9olRVJ2WCAk1HGWriE1hJ': 10,
+  'price_1Tg9pIRVJ2WCAk1HVQwY1BjK': 25,
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -21,7 +29,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { priceId, userId, email, plan } = req.body;
+    const { priceId, userId, email, plan, mode, vizCredits, successUrl, cancelUrl } = req.body;
     if (!priceId || !userId || !email) {
       return res.status(400).json({ error: 'priceId, userId and email required' });
     }
@@ -29,20 +37,31 @@ export default async function handler(req, res) {
     const secretKey = await getConfig('stripe_secret_key');
     if (!secretKey) return res.status(500).json({ error: 'Stripe not configured' });
 
-    const origin = req.headers.origin || 'https://diyestimator.com';
+    const origin = req.headers.origin || 'https://app.diyestimator.com';
+
+    // Determine if this is a one-time viz package or subscription
+    const isVizPackage = mode === 'payment' || VIZ_CREDIT_MAP[priceId];
+    const checkoutMode = isVizPackage ? 'payment' : 'subscription';
+    const credits = vizCredits || VIZ_CREDIT_MAP[priceId] || 0;
 
     const params = new URLSearchParams({
-      'mode': 'subscription',
+      'mode': checkoutMode,
       'line_items[0][price]': priceId,
       'line_items[0][quantity]': '1',
       'customer_email': email,
       'client_reference_id': userId,
-      'success_url': `${origin}/?stripe=success&session_id={CHECKOUT_SESSION_ID}`,
-      'cancel_url': `${origin}/?stripe=cancel`,
-      'subscription_data[trial_period_days]': '3',
+      'success_url': successUrl || `${origin}/?viz_purchased=${credits}&session_id={CHECKOUT_SESSION_ID}`,
+      'cancel_url': cancelUrl || `${origin}/`,
       'metadata[user_id]': userId,
-      'metadata[plan]': plan || 'pro',
+      'metadata[viz_credits]': String(credits),
+      'metadata[price_id]': priceId,
     });
+
+    // Only add trial and subscription metadata for subscription mode
+    if (!isVizPackage) {
+      params.set('subscription_data[trial_period_days]', '3');
+      params.set('metadata[plan]', plan || 'pro');
+    }
 
     const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',

@@ -5,6 +5,14 @@ export const config = {
 const SUPABASE_URL = 'https://zciyiltkaunbozoedfcr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaXlpbHRrYXVuYm96b2VkZmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5OTU4OTAsImV4cCI6MjA5MjU3MTg5MH0._nEPOkh1Ocn5uTwAju2zxim0JH6aROdmuFf1OdsvKzI';
 
+// Map price IDs to viz credit amounts
+const VIZ_CREDIT_MAP = {
+  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy': 3,
+  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy': 5,
+  'price_1Tg9olRVJ2WCAk1HGWriE1hJ': 10,
+  'price_1Tg9pIRVJ2WCAk1HVQwY1BjK': 25,
+};
+
 async function getConfig(key) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/app_config?key=eq.${key}&select=value`, {
     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
@@ -27,7 +35,6 @@ async function verifyStripeSignature(payload, signature, secret) {
   const parts = signature.split(',');
   const timestamp = parts.find(p => p.startsWith('t=')).slice(2);
   const signedPayload = `${timestamp}.${payload}`;
-  
   const key = await crypto.subtle.importKey(
     'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
@@ -37,32 +44,61 @@ async function verifyStripeSignature(payload, signature, secret) {
   return expected === received;
 }
 
-async function updateUserRole(userId, email, role) {
+async function getServiceHeaders() {
   const serviceKey = await getConfig('supabase_service_key') || SUPABASE_ANON_KEY;
-  const headers = {
+  return {
     'apikey': serviceKey,
     'Authorization': `Bearer ${serviceKey}`,
     'Content-Type': 'application/json',
     'Prefer': 'resolution=merge-duplicates,return=minimal'
   };
+}
 
-  // Upsert by user_id — creates profile if doesn't exist
-  if (userId) {
-    const body = { id: userId, role };
-    if (email) body.email = email;
-    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
-      method: 'POST',
+async function upsertProfile(userId, email, updates) {
+  const headers = await getServiceHeaders();
+  const body = { ...updates };
+  if (userId) body.id = userId;
+  if (email) body.email = email;
+
+  await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+}
+
+async function addVizCredits(userId, email, credits) {
+  const headers = await getServiceHeaders();
+
+  // Get current credits first
+  const filter = userId ? `id=eq.${userId}` : `email=eq.${encodeURIComponent(email)}`;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/profiles?${filter}&select=id,viz_credits,viz_credits_total`, {
+    headers
+  });
+  const profiles = await r.json();
+  const profile = profiles?.[0];
+
+  if (profile) {
+    const newCredits = (profile.viz_credits || 0) + credits;
+    const newTotal = (profile.viz_credits_total || 0) + credits;
+    await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${profile.id}`, {
+      method: 'PATCH',
       headers,
-      body: JSON.stringify(body)
+      body: JSON.stringify({ viz_credits: newCredits, viz_credits_total: newTotal })
     });
+    console.log(`Added ${credits} viz credits to user ${profile.id}. New balance: ${newCredits}`);
+  } else {
+    // Create profile with credits
+    await upsertProfile(userId, email, { viz_credits: credits, viz_credits_total: credits, role: 'free' });
+    console.log(`Created profile with ${credits} viz credits for ${email}`);
   }
 
-  // Also upsert by email as fallback
-  if (email && !userId) {
-    await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
+  // Log the purchase
+  if (userId) {
+    await fetch(`${SUPABASE_URL}/rest/v1/viz_purchases`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ email, role })
+      body: JSON.stringify({ user_id: userId, credits, created_at: new Date().toISOString() })
     });
   }
 }
@@ -86,23 +122,37 @@ export default async function handler(req, res) {
       const session = event.data.object;
       const userId = session.client_reference_id || session.metadata?.user_id;
       const email = session.customer_email;
-      await updateUserRole(userId, email, 'pro');
-      console.log(`Upgraded to pro: ${email}`);
+      const mode = session.mode;
+      const priceId = session.metadata?.price_id;
+      const vizCredits = parseInt(session.metadata?.viz_credits || '0');
+
+      if (mode === 'payment' && vizCredits > 0) {
+        // One-time viz package purchase
+        await addVizCredits(userId, email, vizCredits);
+        console.log(`Viz purchase: ${vizCredits} credits for ${email}`);
+      } else if (mode === 'subscription') {
+        // Subscription — grant pro role
+        await upsertProfile(userId, email, { role: 'pro' });
+        console.log(`Upgraded to pro: ${email}`);
+      } else if (priceId && VIZ_CREDIT_MAP[priceId]) {
+        // Fallback: check price ID map
+        await addVizCredits(userId, email, VIZ_CREDIT_MAP[priceId]);
+      }
     }
 
     if (event.type === 'customer.subscription.deleted') {
       const sub = event.data.object;
-      const email = sub.customer_email;
-      // Downgrade — find by stripe customer ID would be more reliable
-      // For now log it; full implementation needs customer lookup
-      console.log(`Subscription cancelled: ${email}`);
+      const customerId = sub.customer;
+      // Look up customer email via Stripe API if needed
+      console.log(`Subscription cancelled for customer: ${customerId}`);
+      // Note: full downgrade needs Stripe customer lookup - handled in future iteration
     }
 
     if (event.type === 'customer.subscription.updated') {
       const sub = event.data.object;
       const status = sub.status;
       if (status === 'active' || status === 'trialing') {
-        console.log(`Subscription active/trialing`);
+        console.log(`Subscription ${status}`);
       }
     }
 
