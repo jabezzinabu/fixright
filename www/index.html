@@ -3145,6 +3145,7 @@ async function loadVizCredits() {
 }
 
 async function checkVizCredits() {
+  if (!currentUser) return false;
   await loadVizCredits();
   return _vizCredits > 0;
 }
@@ -3424,7 +3425,7 @@ function showUpgradeModal() {
   document.getElementById('upgradeModal').classList.add('open');
 }
 function showVizPackageModal() {
-  if (!currentUser) { showAuthModal(); return; }
+  if (!currentUser) { showSignupPopup(); return; }
   document.getElementById('upgradeModal').classList.add('open');
 }
 function closeUpgradeModal() {
@@ -3432,10 +3433,10 @@ function closeUpgradeModal() {
 }
 
 const VIZ_PRICE_IDS = {
-  3:  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy',
-  5:  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy',
-  10: 'price_1Tg9olRVJ2WCAk1HGWriE1hJ',
-  25: 'price_1Tg9pIRVJ2WCAk1HVQwY1BjK',
+  3:  'price_1TgQlHRU8c4qhAdsQSgEKrzb',
+  5:  'price_1TgQlDRU8c4qhAdsMUzLDf03',
+  10: 'price_1TgQl8RU8c4qhAdskDOq6ju5',
+  25: 'price_1TgQl2RU8c4qhAds1Opw75gL',
 };
 
 async function buyVizPackage(credits) {
@@ -4770,9 +4771,32 @@ function checkEstPaywall() {
   // Admins and Pro users always bypass
   if (isPro()) return true;
   if (isAdmin && isAdmin()) return true;
-  if (getEstCount() < 5) return true;
-  showUpgradeModal();
-  return false;
+  // Must be signed in to run estimates
+  if (!currentUser) {
+    // Show signup popup first — explains the 3 free viz offer
+    showSignupPopupForEstimate();
+    return false;
+  }
+  if (getEstCount() < 999) return true; // signed-in users get unlimited estimates
+  return true;
+}
+
+function showSignupPopupForEstimate() {
+  // Show the signup popup with estimate-specific messaging
+  const popup = document.getElementById('signupPopup');
+  if (!popup) { showAuthModal(); return; }
+  // Update messaging to be estimate-focused
+  const title = popup.querySelector('.modal-header h3');
+  const desc = popup.querySelector('.modal-body p');
+  if (title) title.textContent = '🎁 Get 3 Free Visualizations';
+  if (desc) desc.innerHTML = 'Sign up free to run estimates and get <strong>3 free AI visualizations</strong> — see your project before you start.';
+  popup.style.display = 'flex';
+  _signupPopupShown = true;
+  // If they close without signing up, show auth modal
+  const closeBtn = popup.querySelector('.modal-close');
+  const noThanks = popup.querySelector('button[onclick="closeSignupPopup()"]');
+  const originalClose = closeSignupPopup;
+  window._pendingAuthAfterPopup = true;
 }
 
 // ─── SAVE PROMPT ──────────────────────────────────────────────────────────────
@@ -4816,22 +4840,28 @@ async function runCombinedEstimate() {
   submitBtn.disabled = true;
   submitBtn.textContent = '⏳ Generating estimate...';
 
-  // Auto-viz if photo is present and user has credits
+  // Always run estimate — viz is an optional bonus on top
   if (imageBase64) {
-    const hasCredits = isPro() || await checkVizCredits();
+    const hasCredits = isPro() || (currentUser && await checkVizCredits());
     if (hasCredits) {
+      // Has credits — run estimate + viz together
       await generateCombinedViz();
     } else {
-      // No credits — show package modal, reset button
-      submitBtn.disabled = false;
-      submitBtn.textContent = '🔧 Get My Estimate';
-      showVizPackageModal();
-      return;
+      // No credits/not signed in — run estimate only, then prompt
+      await runEstimate();
+      setTimeout(() => {
+        showSavePrompt();
+        if (!currentUser) {
+          setTimeout(showSignupPopup, 1500);
+        } else {
+          setTimeout(showVizPackageModal, 1500);
+        }
+      }, 1200);
     }
   } else {
     // No photo — just estimate
     await runEstimate();
-    setTimeout(showSavePrompt, 1200);
+    setTimeout(() => { showSavePrompt(); if (!currentUser) setTimeout(showSignupPopup, 1500); }, 1200);
   }
 }
 
@@ -5955,6 +5985,11 @@ function closeSignupPopup() {
   const popup = document.getElementById('signupPopup');
   if (popup) popup.style.display = 'none';
   localStorage.setItem('diy_popup_dismissed', '1');
+  // If dismissed while trying to run an estimate, show auth modal as fallback
+  if (window._pendingAuthAfterPopup) {
+    window._pendingAuthAfterPopup = false;
+    setTimeout(showAuthModal, 300);
+  }
 }
 
 async function submitPopupSignup() {
@@ -5979,6 +6014,7 @@ async function submitPopupSignup() {
       trackEvent('signups_count');
     }
 
+    window._pendingAuthAfterPopup = false;
     closeSignupPopup();
     if (data.session) {
       setUser(data.user);
