@@ -1417,6 +1417,66 @@
   @media (max-width: 700px) { #analyticsCards { grid-template-columns: repeat(2,1fr) !important; } }
 
 
+  /* ── VIZ TEASER ────────────────────────────────────────────────────────── */
+  .viz-teaser {
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 2px solid #fcd5c8;
+    background: #fff5f2;
+  }
+  .viz-teaser-header {
+    background: linear-gradient(135deg, #E8481C, #ff6b3d);
+    padding: 0.65rem 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+    color: white; font-weight: 700; font-size: 0.85rem;
+  }
+  .viz-teaser-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  }
+  .viz-teaser-img-wrap {
+    position: relative; overflow: hidden;
+  }
+  .viz-teaser-img-wrap img {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;
+  }
+  .viz-teaser-img-wrap .viz-teaser-label {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.45); color: white;
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 0.3rem 0.5rem;
+  }
+  .viz-teaser-locked {
+    position: relative; overflow: hidden; border-left: 2px solid #fcd5c8;
+    background: #f3f4f6;
+  }
+  .viz-teaser-locked img {
+    width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block;
+    filter: blur(12px) brightness(0.7);
+    transform: scale(1.1);
+  }
+  .viz-teaser-locked-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 0.75rem; text-align: center;
+  }
+  .viz-teaser-locked-overlay .lock-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  .viz-teaser-locked-overlay .lock-text { font-size: 0.78rem; font-weight: 700; color: white; line-height: 1.3; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .viz-teaser-cta {
+    padding: 0.85rem 1rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .viz-teaser-cta button {
+    width: 100%; background: #E8481C; color: white; border: none;
+    border-radius: 99px; padding: 0.75rem; font-size: 0.9rem;
+    font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(232,72,28,0.35);
+  }
+  .viz-teaser-cta .viz-teaser-note {
+    font-size: 0.75rem; color: #E8481C; text-align: center;
+  }
+
   /* ── COLLAPSIBLE SECTIONS ──────────────────────────────────────────────── */
   .collapsible-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -1646,6 +1706,8 @@
 
     <!-- RESULTS -->
     <div id="results">
+      <!-- VIZ TEASER — shown when user has photo but no viz credits -->
+      <div id="vizTeaser" style="display:none;"></div>
       <div class="result-header">
         <div class="result-title" id="resultTitle"></div>
         <div class="price-row">
@@ -2546,6 +2608,43 @@ function renderResults(est) {
     } else {
       beforeAfterEl.innerHTML = '';
       beforeAfterEl.style.display = 'none';
+    }
+  }
+
+  // Show viz teaser if user uploaded a photo but has no viz yet
+  const teaserEl = document.getElementById('vizTeaser');
+  if (teaserEl) {
+    const hasPhoto = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
+    const hasViz = est.vizImage;
+    if (hasPhoto && !hasViz && !est.isDemo) {
+      const photoSrc = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
+      teaserEl.innerHTML = `
+        <div class="viz-teaser">
+          <div class="viz-teaser-header">
+            ✨ See Your Project Transformed
+          </div>
+          <div class="viz-teaser-grid">
+            <div class="viz-teaser-img-wrap">
+              <img src="${photoSrc}" alt="Before">
+              <div class="viz-teaser-label">📷 Your Space</div>
+            </div>
+            <div class="viz-teaser-locked">
+              <img src="${photoSrc}" alt="After preview">
+              <div class="viz-teaser-locked-overlay">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-text">AI Visualization<br>Unlocked with credits</div>
+              </div>
+            </div>
+          </div>
+          <div class="viz-teaser-cta">
+            <button onclick="showVizPackageModal()">✨ Unlock Before &amp; After — from $3.99</button>
+            <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
+          </div>
+        </div>`;
+      teaserEl.style.display = 'block';
+    } else {
+      teaserEl.style.display = 'none';
+      teaserEl.innerHTML = '';
     }
   }
 
