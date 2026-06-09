@@ -15,10 +15,10 @@ async function getConfig(key) {
 
 // Map price IDs to viz credit amounts
 const VIZ_CREDIT_MAP = {
-  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy': 3,
-  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy': 5,
-  'price_1Tg9olRVJ2WCAk1HGWriE1hJ': 10,
-  'price_1Tg9pIRVJ2WCAk1HVQwY1BjK': 25,
+  'price_1TgQlHRU8c4qhAdsQSgEKrzb': 3,
+  'price_1TgQlDRU8c4qhAdsMUzLDf03': 5,
+  'price_1TgQl8RU8c4qhAdskDOq6ju5': 10,
+  'price_1TgQl2RU8c4qhAds1Opw75gL': 25,
 };
 
 export default async function handler(req, res) {
@@ -55,6 +55,7 @@ export default async function handler(req, res) {
       'metadata[user_id]': userId,
       'metadata[viz_credits]': String(credits),
       'metadata[price_id]': priceId,
+      'allow_promotion_codes': 'true',
     });
 
     // Only add trial and subscription metadata for subscription mode
