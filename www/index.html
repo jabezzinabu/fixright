@@ -1522,6 +1522,7 @@
   <div class="header-actions">
     <span class="db-status" id="dbStatus" title="Database status"></span>
 
+    <div id="vizCreditBadge" style="display:none;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:99px;padding:0.25rem 0.65rem;font-size:0.75rem;font-weight:700;color:#E8481C;cursor:default;white-space:nowrap;"></div>
     <button class="btn-history" id="savedBtn" onclick="toggleDrawer()">
       📋 Saved
       <span class="history-count" id="savedCount">0</span>
@@ -2615,7 +2616,7 @@ function renderResults(est) {
   const teaserEl = document.getElementById('vizTeaser');
   if (teaserEl) {
     const hasPhoto = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
-    const hasViz = est.vizImage;
+    const hasViz = est.vizImage || vizResultImageSrc;
     if (hasPhoto && !hasViz && !est.isDemo) {
       const photoSrc = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
       teaserEl.innerHTML = `
@@ -3280,15 +3281,26 @@ function markFreeVizUsed() { deductVizCredit(); }
 
 function updateFreeNotice() {
   const notice = document.getElementById('vizFreeNotice');
-  if (!notice) return;
-  if (!currentUser) {
-    notice.style.display = 'inline-flex';
-    notice.textContent = '🔒 Sign in for 3 free visualizations';
-  } else if (_vizCredits > 0) {
-    notice.style.display = 'inline-flex';
-    notice.textContent = `🎁 ${_vizCredits} free visualization${_vizCredits > 1 ? 's' : ''} remaining`;
-  } else {
-    notice.style.display = 'none';
+  if (notice) {
+    if (!currentUser) {
+      notice.style.display = 'inline-flex';
+      notice.textContent = '🔒 Sign in for 3 free visualizations';
+    } else if (_vizCredits > 0) {
+      notice.style.display = 'inline-flex';
+      notice.textContent = `🎁 ${_vizCredits} visualization${_vizCredits > 1 ? 's' : ''} remaining`;
+    } else {
+      notice.style.display = 'none';
+    }
+  }
+  // Update header credit badge
+  const badge = document.getElementById('vizCreditBadge');
+  if (badge) {
+    if (currentUser && _vizCredits > 0) {
+      badge.textContent = `✨ ${_vizCredits} viz credit${_vizCredits !== 1 ? 's' : ''}`;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 }
 
@@ -5067,6 +5079,13 @@ Rules:
       vizResultImageSrc = imgSrc;
       incVizCount();
       trackEvent('visualizations_count');
+
+      // Hide the teaser — user now has their viz
+      const teaserToHide = document.getElementById('vizTeaser');
+      if (teaserToHide) { teaserToHide.style.display = 'none'; teaserToHide.innerHTML = ''; }
+
+      // Update credit display
+      updateFreeNotice();
 
       // Show before/after
       document.getElementById('combinedVizBefore').src = vizPhotoDataUrl;
