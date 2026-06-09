@@ -3909,10 +3909,22 @@ async function loadAdminEstimates() {
       .select('id, title, price_range, region, user_id, created_at')
       .order('created_at', { ascending: false })
       .limit(200);
-    loading.style.display = 'none';
     if (error) throw error;
+
+    // Fetch profiles for all unique user_ids to get emails
+    const userIds = [...new Set((data || []).map(e => e.user_id).filter(Boolean))];
+    let profileMap = {};
+    if (userIds.length) {
+      const { data: profiles } = await db.from('profiles')
+        .select('id, email, role')
+        .in('id', userIds);
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+    }
+
+    loading.style.display = 'none';
     if (!data?.length) { empty.style.display = 'block'; return; }
-    _adminEstimates = data;
+    // Attach profile data to each estimate
+    _adminEstimates = data.map(e => ({ ...e, _profile: profileMap[e.user_id] || null }));
     _adminEstPage = 0;
     renderAdminEstimatesPage();
     table.style.display = 'table';
@@ -3927,15 +3939,29 @@ function renderAdminEstimatesPage() {
   const start = _adminEstPage * ADMIN_EST_PAGE_SIZE;
   const page = _adminEstimates.slice(start, start + ADMIN_EST_PAGE_SIZE);
   const tbody = document.getElementById('estimatesBody');
-  tbody.innerHTML = page.map(e => `
-    <tr>
-      <td style="font-weight:500">${e.title || 'Untitled'}</td>
+  tbody.innerHTML = page.map(e => {
+    const profile = e._profile;
+    const email = profile?.email;
+    const role = profile?.role;
+    // Display: email if available, else region, else truncated user_id
+    let userDisplay = '';
+    if (email) {
+      userDisplay = `<div style="font-size:0.78rem;color:#111;">${email}</div>` +
+        (role && role !== 'free' ? `<div style="font-size:0.68rem;color:#E8481C;font-weight:600;text-transform:uppercase;">${role}</div>` : '');
+    } else if (e.user_id) {
+      userDisplay = `<div style="font-family:monospace;font-size:0.72rem;color:var(--muted);">${e.user_id.slice(0,14)}…</div><div style="font-size:0.68rem;color:var(--muted);">no profile</div>`;
+    } else {
+      userDisplay = '<div style="font-size:0.72rem;color:var(--muted);">Anonymous</div>';
+    }
+    return `<tr>
+      <td style="font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title || 'Untitled'}</td>
       <td style="color:var(--rust);font-weight:600">${e.price_range || '—'}</td>
-      <td>${formatRegion(e.region)}</td>
-      <td style="font-family:monospace;font-size:0.75rem;color:var(--muted)">${(e.user_id||'').slice(0,12)}...</td>
-      <td style="color:var(--muted)">${new Date(e.created_at).toLocaleDateString()}</td>
+      <td style="font-size:0.8rem;">${formatRegion(e.region)}</td>
+      <td>${userDisplay}</td>
+      <td style="color:var(--muted);font-size:0.8rem;">${new Date(e.created_at).toLocaleDateString()}</td>
       <td><button onclick="setDemoEstimate('${e.id}')" style="font-size:0.72rem;background:#f3f4f6;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Set Demo</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   // Pagination controls
   let pag = document.getElementById('estPagination');
   if (!pag) {
