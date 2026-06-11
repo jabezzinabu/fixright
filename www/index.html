@@ -2343,23 +2343,31 @@ function confirmApiKey() {}
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  // Detect password-reset BEFORE auth listener registers.
-  // We check every possible URL shape Supabase might use.
+  // Detect password-reset flow BEFORE auth listener registers, using every signal available.
   const _bootP = new URLSearchParams(location.search);
-  window._isRecoveryFlow =
+  const _urlRecovery =
     _bootP.get('reset') === '1' ||           // our custom redirectTo param
-    _bootP.get('type') === 'recovery' ||      // Supabase PKCE adds this
+    _bootP.get('type') === 'recovery' ||      // Supabase PKCE
     location.hash.includes('type=recovery');  // Supabase implicit flow
+  // localStorage flag is set the moment user clicks "Send Reset Link" —
+  // survives any URL stripping or redirect chain Supabase might do.
+  const _lsRecovery = localStorage.getItem('pwdResetPending') === '1';
+  if (_lsRecovery) localStorage.removeItem('pwdResetPending'); // consume immediately
+  window._isRecoveryFlow = _urlRecovery || _lsRecovery;
+  console.log('[PWD RESET] _isRecoveryFlow:', window._isRecoveryFlow,
+    '| URL:', location.href, '| lsFlag:', _lsRecovery);
 
   initSupabase();
   checkSession();
 
-  // Fallback: if URL indicates recovery, show the modal directly after Supabase
-  // has had time to exchange the code — guards against all event-timing edge cases.
+  // Hard fallback: if recovery detected and modal still absent after 1.5s, force-show it.
   if (window._isRecoveryFlow) {
     setTimeout(() => {
-      if (!document.getElementById('resetModal')) showPasswordResetModal();
-    }, 1200);
+      if (!document.getElementById('resetModal')) {
+        console.log('[PWD RESET] Fallback: showing modal directly');
+        showPasswordResetModal();
+      }
+    }, 1500);
   }
   // Track page visit (anonymous or logged in)
   setTimeout(() => { if (!currentUser || (currentUser?.role !== 'admin' && currentUser?.email !== 'jabezzinabu@gmail.com')) trackEvent('visitors_count'); }, 2000);
@@ -3030,11 +3038,13 @@ async function checkSession() {
     let recoveryHandled = false;
 
     db.auth.onAuthStateChange((event, session) => {
+      console.log('[AUTH]', event, '| user:', !!session?.user, '| _isRecoveryFlow:', window._isRecoveryFlow);
       // Guard 1: explicit PASSWORD_RECOVERY event
-      // Guard 2: any event with a user while URL flagged as recovery flow
+      // Guard 2: any event with a user while recovery flow is active (URL or localStorage flag)
       if (event === 'PASSWORD_RECOVERY' || (window._isRecoveryFlow && session?.user)) {
         recoveryHandled = true;
         window._isRecoveryFlow = false;
+        console.log('[PWD RESET] Showing password reset modal (event:', event, ')');
         showPasswordResetModal();
         return;
       }
@@ -5969,10 +5979,16 @@ async function sendPasswordReset() {
   const btn = document.getElementById('sendResetBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
   try {
+    // Set flag BEFORE sending — so when the user clicks the email link
+    // and lands back here, we know it's a password reset regardless of URL params.
+    localStorage.setItem('pwdResetPending', '1');
     const { error } = await db.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/?type=recovery&reset=1'
     });
-    if (error) throw error;
+    if (error) {
+      localStorage.removeItem('pwdResetPending');
+      throw error;
+    }
     // Close the modal and show a prominent confirmation the user can't miss
     closeAuthModal();
     showResetConfirmation(email);
