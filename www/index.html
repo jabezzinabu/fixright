@@ -3014,6 +3014,12 @@ async function checkSession() {
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) setUser(session.user);
     db.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // User clicked a password reset link — show the set-new-password modal
+        // Do NOT log them in yet; wait until they set a new password
+        setTimeout(showPasswordResetModal, 300);
+        return;
+      }
       if (session?.user) setUser(session.user);
       else clearUser();
     });
@@ -6028,9 +6034,11 @@ async function submitPasswordReset() {
   succEl.textContent = 'Updating...';
 
   try {
-    const { error } = await db.auth.updateUser({ password: newPwd });
+    const { data, error } = await db.auth.updateUser({ password: newPwd });
     if (error) throw error;
-    succEl.textContent = '✓ Password updated! You are now signed in.';
+    succEl.textContent = '✓ Password updated! Signing you in...';
+    // Log the user in with the session returned from updateUser
+    if (data?.user) setUser(data.user);
     // Clean up URL and close modal after 2s
     setTimeout(() => {
       document.getElementById('resetModal')?.remove();
