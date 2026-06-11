@@ -6290,8 +6290,17 @@ async function loadDemoEstimate() {
           steps: est.steps,
           warnings: est.warnings,
           tip: est.tip,
+          desc: est.description || '',
+          vizImage: est.viz_image || null,
+          beforeImage: est.before_image || null,
           isDemo: true
         };
+        // Populate the description field so it matches the demo estimate
+        const descEl = document.getElementById('description');
+        if (descEl && estData.desc) descEl.value = estData.desc;
+        // Restore viz state so the before/after panel shows correctly
+        if (estData.vizImage) vizResultImageSrc = estData.vizImage;
+        if (estData.beforeImage) vizPhotoDataUrl = estData.beforeImage;
         currentEstimate = estData;
         renderResults(estData);
         document.getElementById('sharedBanner') && (document.getElementById('sharedBanner').innerHTML = '🎯 This is a sample estimate — <a href="#" onclick="clearResults();return false;" style="color:white;">try your own project</a>');
