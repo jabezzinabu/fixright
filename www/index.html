@@ -2343,6 +2343,14 @@ function confirmApiKey() {}
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
+  // Detect password-reset flow BEFORE the auth listener is registered.
+  // Supabase processes the recovery token during client init, so by the time
+  // onAuthStateChange fires it may already be INITIAL_SESSION (not PASSWORD_RECOVERY).
+  const _bootP = new URLSearchParams(location.search);
+  window._isRecoveryFlow = _bootP.get('reset') === '1' ||
+    _bootP.get('type') === 'recovery' ||
+    location.hash.includes('type=recovery');
+
   initSupabase();
   checkSession();
   // Track page visit (anonymous or logged in)
@@ -3011,18 +3019,18 @@ let authMode = 'signin';
 async function checkSession() {
   if (!dbReady) return;
   try {
-    // Rely solely on onAuthStateChange — it fires INITIAL_SESSION for existing
-    // sessions and PASSWORD_RECOVERY for reset links, with no race condition.
     db.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Show the set-new-password modal — do NOT log the user in
+      // PASSWORD_RECOVERY fires if the client catches the token before we subscribe.
+      // window._isRecoveryFlow catches the case where the session is already
+      // established and Supabase fires INITIAL_SESSION/SIGNED_IN instead.
+      if (event === 'PASSWORD_RECOVERY' || (window._isRecoveryFlow && session?.user)) {
+        window._isRecoveryFlow = false; // consume — subsequent events work normally
         showPasswordResetModal();
         return;
       }
       if (session?.user) setUser(session.user);
       else clearUser();
     });
-    // No getSession() call — onAuthStateChange handles INITIAL_SESSION automatically
   } catch(e) { console.log('Auth check failed:', e.message); }
 }
 
