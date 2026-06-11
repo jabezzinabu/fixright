@@ -1535,6 +1535,7 @@
       <div class="user-dropdown" id="userDropdown">
         <div class="dropdown-email" id="dropdownEmail"></div>
         <div class="dropdown-item" onclick="toggleDrawer(); toggleUserMenu()">📋 Saved Estimates</div>
+        <div class="dropdown-item" onclick="showChangePasswordModal(); toggleUserMenu()">🔑 Change Password</div>
         <a href="mailto:hello@diyestimator.com" class="dropdown-item" style="text-decoration:none;color:inherit;">✉️ Contact Us</a>
         <a href="https://contractor.diyestimator.com" target="_blank" class="dropdown-item" style="text-decoration:none;color:inherit;">🏗️ For Contractors →</a>
         <div class="dropdown-item danger" onclick="signOut()">🚪 Sign Out</div>
@@ -1592,6 +1593,11 @@
   <!-- FORM CARD -->
   <div class="form-card">
     <div class="form-body">
+
+      <!-- SEE SAMPLE -->
+      <button type="button" id="demoBtn" onclick="loadDemoEstimate()" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:99px;padding:0.7rem;font-size:0.85rem;color:#E8481C;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:0.85rem;transition:background 0.2s;">
+        👀 See a sample estimate
+      </button>
 
       <!-- DESCRIPTION -->
       <div class="field">
@@ -1655,9 +1661,6 @@
 
       <button class="btn-estimate" id="submitBtn" onclick="runCombinedEstimate()">
         🔧 Get My Estimate
-      </button>
-      <button type="button" id="demoBtn" onclick="loadDemoEstimate()" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:99px;padding:0.7rem;font-size:0.85rem;color:#E8481C;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.6rem;transition:background 0.2s;">
-        👀 See a sample estimate
       </button>
     </div>
 
@@ -2567,13 +2570,23 @@ function renderResults(est) {
   document.getElementById('tipContainer').innerHTML = est.tip
     ? `<div class="info-box tip"><strong>💡 Pro Tip</strong>${est.tip}</div>` : '';
 
-  // Set collapsible summaries
+  // Set collapsible summaries and expand all sections by default
   const matCount = (est.materials || []).length;
   const matSummaryEl = document.getElementById('materialsSummary');
-  if (matSummaryEl) matSummaryEl.textContent = matCount + ' items · tap to expand';
+  if (matSummaryEl) matSummaryEl.textContent = matCount + ' items';
+  const matContent = document.getElementById('materialsContent');
+  const matArrow = document.getElementById('materialsArrow');
+  if (matContent) matContent.classList.add('open');
+  if (matArrow) matArrow.classList.add('open');
+
   const stepCount = (est.steps || []).length;
   const stepsSummaryEl = document.getElementById('stepsSummary');
-  if (stepsSummaryEl) stepsSummaryEl.textContent = stepCount + ' steps · tap to expand';
+  if (stepsSummaryEl) stepsSummaryEl.textContent = stepCount + ' steps';
+  const stepsContent = document.getElementById('stepsContent');
+  const stepsArrow = document.getElementById('stepsArrow');
+  if (stepsContent) stepsContent.classList.add('open');
+  if (stepsArrow) stepsArrow.classList.add('open');
+
   // Show warnings section only if there are warnings or tips
   const warnSection = document.getElementById('warningsTipSection');
   const warnCount = (est.warnings || []).length + (est.tip ? 1 : 0);
@@ -2581,7 +2594,11 @@ function renderResults(est) {
     if (warnCount > 0) {
       warnSection.style.display = 'block';
       const warnSummaryEl = document.getElementById('warningsSummary');
-      if (warnSummaryEl) warnSummaryEl.textContent = warnCount + ' note' + (warnCount > 1 ? 's' : '') + ' · tap to expand';
+      if (warnSummaryEl) warnSummaryEl.textContent = warnCount + ' note' + (warnCount > 1 ? 's' : '');
+      const warnContent = document.getElementById('warningsContent');
+      const warnArrow = document.getElementById('warningsArrow');
+      if (warnContent) warnContent.classList.add('open');
+      if (warnArrow) warnArrow.classList.add('open');
     } else {
       warnSection.style.display = 'none';
     }
@@ -2621,8 +2638,9 @@ function renderResults(est) {
       const photoSrc = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
       teaserEl.innerHTML = `
         <div class="viz-teaser">
-          <div class="viz-teaser-header">
-            ✨ See Your Project Transformed
+          <div class="viz-teaser-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>✨ See Your Project Transformed</span>
+            <button onclick="document.getElementById('vizTeaser').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;line-height:1;" title="Close">✕</button>
           </div>
           <div class="viz-teaser-grid">
             <div class="viz-teaser-img-wrap">
@@ -4598,17 +4616,29 @@ function filterDiscover(cat) {
   activeDiscoverCategory = cat;
 }
 
+const DISCOVER_CAT_PHOTOS = {
+  kitchen:  'https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&h=600&fit=crop&auto=format',
+  living:   'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&h=600&fit=crop&auto=format',
+  bedroom:  'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=800&h=600&fit=crop&auto=format',
+  garden:   'https://images.unsplash.com/photo-1588854337115-1c67d9247e4f?w=800&h=600&fit=crop&auto=format',
+  exterior: 'https://images.unsplash.com/photo-1568605117036-5da5db4d073d?w=800&h=600&fit=crop&auto=format',
+  bathroom: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&h=600&fit=crop&auto=format',
+};
+
 function renderDiscoverCategories() {
   const grid = document.getElementById('discoverCatGrid');
-  grid.innerHTML = ALL_DISCOVER_ITEMS.map((cat, i) => `
+  grid.innerHTML = ALL_DISCOVER_ITEMS.map((cat, i) => {
+    const catPhoto = DISCOVER_CAT_PHOTOS[cat.id] || DISCOVER_CAT_PHOTOS.living;
+    return `
     <div class="discover-cat-card" style="animation-delay:${i*0.06}s" onclick="showRoomView('${cat.id}')">
-      <img src="${cat.items[0].img}" alt="${cat.label}" loading="lazy"
+      <img src="${catPhoto}" alt="${cat.label}" loading="lazy"
         onerror="this.src='https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=400&h=500&fit=crop'">
       <div class="discover-cat-overlay">
         <div class="discover-cat-label">${cat.label}</div>
         <div class="discover-cat-count">${cat.items.length} designs</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function showRoomView(catId) {
@@ -4905,16 +4935,7 @@ function getEstCount() { return parseInt(localStorage.getItem('fixright_est_coun
 function incEstCount() { localStorage.setItem('fixright_est_count', getEstCount() + 1); }
 
 function checkEstPaywall() {
-  // Admins and Pro users always bypass
-  if (isPro()) return true;
-  if (isAdmin && isAdmin()) return true;
-  // Must be signed in to run estimates
-  if (!currentUser) {
-    // Show signup popup first — explains the 3 free viz offer
-    showSignupPopupForEstimate();
-    return false;
-  }
-  if (getEstCount() < 999) return true; // signed-in users get unlimited estimates
+  // Everyone can run estimates — signup is invited after, not required before
   return true;
 }
 
@@ -5087,12 +5108,14 @@ Rules:
       // Update credit display
       updateFreeNotice();
 
-      // Show before/after
+      // Show before/after briefly, then auto-run estimate (no approval step needed)
       document.getElementById('combinedVizBefore').src = vizPhotoDataUrl;
       document.getElementById('combinedVizAfter').src = vizResultImageSrc;
       if (beforeAfter) beforeAfter.style.display = 'grid';
       loading.style.display = 'none';
-      actions.style.display = 'flex';
+      actions.style.display = 'none'; // hide approval buttons — auto-continue
+      // Auto-run the estimate immediately
+      await confirmVizAndEstimate();
     } else {
       // Extract error message properly regardless of format
       let errMsg = 'No image returned';
@@ -5248,6 +5271,7 @@ IMPORTANT: Use the area measurements above to calculate accurate material quanti
       <button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">✅ Re-estimate</button>`;
 
     setTimeout(showSavePrompt, 800);
+    if (!currentUser) setTimeout(showSignupPopup, 2000);
 
   } catch(e) {
     if (loading) loading.style.display = 'none';
@@ -5794,11 +5818,68 @@ function buildRetailerBadges(itemName) {
   const query = encodeURIComponent(itemName);
   return `<div class="mat-retailers">${
     retailers.map(r =>
-      `<a href="${r.url}${query}" target="_blank" rel="noopener" class="retailer-badge ${r.cls}">${r.name} →</a>`
+      `<a href="${r.url}${query}" target="_blank" rel="noopener" class="retailer-badge ${r.cls}">BUY ${r.name} →</a>`
     ).join('')
   }</div>`;
 }
 
+
+// ─── CHANGE PASSWORD (from account menu) ──────────────────────────────────────
+function showChangePasswordModal() {
+  const existing = document.getElementById('changePwdModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'changePwdModal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3>Change Password</h3>
+        <button class="modal-close" onclick="document.getElementById('changePwdModal').remove()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-error" id="changePwdError" style="display:none;"></div>
+        <div class="auth-success" id="changePwdSuccess" style="display:none;"></div>
+        <div class="field" style="margin-bottom:0.75rem;">
+          <label>New Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="changePwdNew" placeholder="New password (min 6 characters)" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+            <button type="button" class="pwd-toggle" onclick="togglePwd('changePwdNew', this)" title="Show/hide">👁</button>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:1.25rem;">
+          <label>Confirm New Password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="changePwdConfirm" placeholder="Confirm new password" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.92rem;outline:none;box-sizing:border-box;">
+            <button type="button" class="pwd-toggle" onclick="togglePwd('changePwdConfirm', this)" title="Show/hide">👁</button>
+          </div>
+        </div>
+        <button onclick="submitChangePassword()" class="btn-auth" style="width:100%;">Update Password</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function submitChangePassword() {
+  const newPwd = document.getElementById('changePwdNew').value;
+  const confirmPwd = document.getElementById('changePwdConfirm').value;
+  const errEl = document.getElementById('changePwdError');
+  const succEl = document.getElementById('changePwdSuccess');
+  errEl.style.display = 'none'; succEl.style.display = 'none';
+  if (!newPwd || newPwd.length < 6) { errEl.textContent = 'Password must be at least 6 characters'; errEl.style.display = 'block'; return; }
+  if (newPwd !== confirmPwd) { errEl.textContent = 'Passwords do not match'; errEl.style.display = 'block'; return; }
+  succEl.textContent = 'Updating...'; succEl.style.display = 'block';
+  try {
+    const { error } = await db.auth.updateUser({ password: newPwd });
+    if (error) throw error;
+    succEl.textContent = '✓ Password updated successfully!';
+    setTimeout(() => document.getElementById('changePwdModal')?.remove(), 2000);
+  } catch(e) {
+    errEl.textContent = e.message || 'Could not update password. Please try again.';
+    errEl.style.display = 'block'; succEl.style.display = 'none';
+  }
+}
 
 // ─── FORGOT PASSWORD ──────────────────────────────────────────────────────────
 function showForgotPassword() {
@@ -6159,12 +6240,19 @@ async function submitPopupSignup() {
     }
 
     window._pendingAuthAfterPopup = false;
-    closeSignupPopup();
     if (data.session) {
+      closeSignupPopup();
       setUser(data.user);
       showToast('🎉 Welcome! You have 3 free visualizations.');
     } else {
-      showToast('✅ Account created! Check your email to confirm.');
+      // Email verification required — show clear message in the popup instead of closing it
+      btn.textContent = '✓ Account created!'; btn.disabled = true;
+      errEl.style.display = 'none';
+      const emailMsg = document.createElement('div');
+      emailMsg.style.cssText = 'background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:0.75rem;font-size:0.85rem;color:#166534;margin-bottom:0.75rem;line-height:1.5;';
+      emailMsg.innerHTML = '<strong>✅ Account created!</strong><br>Please check your email and click the confirmation link to activate your account.<br><br>You can view your estimate below — confirm your email when you\'re ready to save.';
+      btn.parentNode.insertBefore(emailMsg, btn);
+      setTimeout(closeSignupPopup, 5000);
     }
   } catch(e) {
     const msg = e.message || '';

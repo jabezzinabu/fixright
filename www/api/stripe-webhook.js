@@ -7,10 +7,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Map price IDs to viz credit amounts
 const VIZ_CREDIT_MAP = {
-  'price_1Tg9hiRVJ2WCAk1HXGd1YuBy': 3,
-  'price_1Tg9k6RVJ2WCAk1HTYS5FQMy': 5,
-  'price_1Tg9olRVJ2WCAk1HGWriE1hJ': 10,
-  'price_1Tg9pIRVJ2WCAk1HVQwY1BjK': 25,
+  'price_1TgQlHRU8c4qhAdsQSgEKrzb': 3,
+  'price_1TgQlDRU8c4qhAdsMUzLDf03': 5,
+  'price_1TgQl8RU8c4qhAdskDOq6ju5': 10,
+  'price_1TgQl2RU8c4qhAds1Opw75gL': 25,
 };
 
 async function getConfig(key) {
