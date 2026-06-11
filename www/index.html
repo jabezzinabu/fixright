@@ -3149,7 +3149,8 @@ async function submitAuth() {
     }
     if (result.error) throw result.error;
     if (authMode === 'signup' && !result.data.session) {
-      showAuthSuccess('Check your email to confirm your account!');
+      showAuthSuccess('✓ Account created! Check your email to confirm before signing in.');
+      showToast('📧 Confirmation email sent — check your inbox!');
       trackEvent('signups_count');
       // Grant 3 free viz credits
       if (result.data.user) {
@@ -4218,7 +4219,7 @@ const _origSwitchTab = switchTab;
         </div>
         <div id="forgotForm" style="display:none;">
           <input type="email" id="forgotEmail" placeholder="Enter your email address" style="margin-bottom:0.5rem;">
-          <button class="btn-auth" onclick="sendPasswordReset()" style="background:var(--sage);">Send Reset Link</button>
+          <button class="btn-auth" id="sendResetBtn" onclick="sendPasswordReset()" style="background:var(--sage);">Send Reset Link</button>
           <button onclick="hideForgotPassword()" style="background:none;border:none;color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.35rem;width:100%;text-align:center;">← Back to Sign In</button>
         </div>
         <button class="btn-auth" id="authSubmitBtn" onclick="submitAuth()">Sign In</button>
@@ -5938,22 +5939,22 @@ function hideForgotPassword() {
 
 async function sendPasswordReset() {
   const email = document.getElementById('forgotEmail').value.trim();
-  if (!email) { document.getElementById('authError').textContent = 'Please enter your email address'; return; }
-  const errEl = document.getElementById('authError');
-  const succEl = document.getElementById('authSuccess');
-  errEl.textContent = '';
-  succEl.textContent = 'Sending...';
+  if (!email) { showAuthError('Please enter your email address'); return; }
+  const btn = document.getElementById('sendResetBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+  showAuthSuccess('Sending...');
   try {
     const { error } = await db.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/?reset=1'
     });
     if (error) throw error;
-    succEl.textContent = '✓ Reset link sent — check your email';
-    errEl.textContent = '';
-    setTimeout(hideForgotPassword, 3000);
+    showAuthSuccess('✓ Reset link sent — check your inbox (and spam folder)');
+    showToast('📧 Password reset email sent — check your inbox!');
+    if (btn) { btn.textContent = '✓ Email sent!'; }
+    setTimeout(hideForgotPassword, 4000);
   } catch(e) {
-    errEl.textContent = e.message || 'Could not send reset email';
-    succEl.textContent = '';
+    showAuthError(e.message || 'Could not send reset email');
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Reset Link'; }
   }
 }
 
