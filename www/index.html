@@ -3011,18 +3011,24 @@ let authMode = 'signin';
 async function checkSession() {
   if (!dbReady) return;
   try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session?.user) setUser(session.user);
+    // Track whether a PASSWORD_RECOVERY event fires so we can suppress auto-login
+    let _recoveryDetected = false;
+
+    // Register onAuthStateChange BEFORE getSession so we never miss PASSWORD_RECOVERY
     db.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        // User clicked a password reset link — show the set-new-password modal
-        // Do NOT log them in yet; wait until they set a new password
-        setTimeout(showPasswordResetModal, 300);
+        _recoveryDetected = true;
+        // Show the set-new-password modal — do NOT log the user in
+        showPasswordResetModal();
         return;
       }
       if (session?.user) setUser(session.user);
       else clearUser();
     });
+
+    // Now get the current session — but skip auto-login if recovery was detected
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user && !_recoveryDetected) setUser(session.user);
   } catch(e) { console.log('Auth check failed:', e.message); }
 }
 
