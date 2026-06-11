@@ -2343,16 +2343,24 @@ function confirmApiKey() {}
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  // Detect password-reset flow BEFORE the auth listener is registered.
-  // Supabase processes the recovery token during client init, so by the time
-  // onAuthStateChange fires it may already be INITIAL_SESSION (not PASSWORD_RECOVERY).
+  // Detect password-reset BEFORE auth listener registers.
+  // We check every possible URL shape Supabase might use.
   const _bootP = new URLSearchParams(location.search);
-  window._isRecoveryFlow = _bootP.get('reset') === '1' ||
-    _bootP.get('type') === 'recovery' ||
-    location.hash.includes('type=recovery');
+  window._isRecoveryFlow =
+    _bootP.get('reset') === '1' ||           // our custom redirectTo param
+    _bootP.get('type') === 'recovery' ||      // Supabase PKCE adds this
+    location.hash.includes('type=recovery');  // Supabase implicit flow
 
   initSupabase();
   checkSession();
+
+  // Fallback: if URL indicates recovery, show the modal directly after Supabase
+  // has had time to exchange the code — guards against all event-timing edge cases.
+  if (window._isRecoveryFlow) {
+    setTimeout(() => {
+      if (!document.getElementById('resetModal')) showPasswordResetModal();
+    }, 1200);
+  }
   // Track page visit (anonymous or logged in)
   setTimeout(() => { if (!currentUser || (currentUser?.role !== 'admin' && currentUser?.email !== 'jabezzinabu@gmail.com')) trackEvent('visitors_count'); }, 2000);
 
@@ -3019,18 +3027,28 @@ let authMode = 'signin';
 async function checkSession() {
   if (!dbReady) return;
   try {
+    let recoveryHandled = false;
+
     db.auth.onAuthStateChange((event, session) => {
-      // PASSWORD_RECOVERY fires if the client catches the token before we subscribe.
-      // window._isRecoveryFlow catches the case where the session is already
-      // established and Supabase fires INITIAL_SESSION/SIGNED_IN instead.
+      // Guard 1: explicit PASSWORD_RECOVERY event
+      // Guard 2: any event with a user while URL flagged as recovery flow
       if (event === 'PASSWORD_RECOVERY' || (window._isRecoveryFlow && session?.user)) {
-        window._isRecoveryFlow = false; // consume — subsequent events work normally
+        recoveryHandled = true;
+        window._isRecoveryFlow = false;
         showPasswordResetModal();
         return;
       }
       if (session?.user) setUser(session.user);
       else clearUser();
     });
+
+    // getSession() is required to trigger PKCE code exchange —
+    // without it Supabase may never exchange the ?code= from the reset URL.
+    const { data: { session } } = await db.auth.getSession();
+    // Only auto-login if neither guard above already handled a recovery event.
+    if (session?.user && !window._isRecoveryFlow && !recoveryHandled) {
+      setUser(session.user);
+    }
   } catch(e) { console.log('Auth check failed:', e.message); }
 }
 
@@ -5952,7 +5970,7 @@ async function sendPasswordReset() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
   try {
     const { error } = await db.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/?reset=1'
+      redirectTo: window.location.origin + '/?type=recovery&reset=1'
     });
     if (error) throw error;
     // Close the modal and show a prominent confirmation the user can't miss
