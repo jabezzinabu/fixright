@@ -3011,13 +3011,10 @@ let authMode = 'signin';
 async function checkSession() {
   if (!dbReady) return;
   try {
-    // Track whether a PASSWORD_RECOVERY event fires so we can suppress auto-login
-    let _recoveryDetected = false;
-
-    // Register onAuthStateChange BEFORE getSession so we never miss PASSWORD_RECOVERY
+    // Rely solely on onAuthStateChange — it fires INITIAL_SESSION for existing
+    // sessions and PASSWORD_RECOVERY for reset links, with no race condition.
     db.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        _recoveryDetected = true;
         // Show the set-new-password modal — do NOT log the user in
         showPasswordResetModal();
         return;
@@ -3025,10 +3022,7 @@ async function checkSession() {
       if (session?.user) setUser(session.user);
       else clearUser();
     });
-
-    // Now get the current session — but skip auto-login if recovery was detected
-    const { data: { session } } = await db.auth.getSession();
-    if (session?.user && !_recoveryDetected) setUser(session.user);
+    // No getSession() call — onAuthStateChange handles INITIAL_SESSION automatically
   } catch(e) { console.log('Auth check failed:', e.message); }
 }
 
@@ -5948,20 +5942,42 @@ async function sendPasswordReset() {
   if (!email) { showAuthError('Please enter your email address'); return; }
   const btn = document.getElementById('sendResetBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
-  showAuthSuccess('Sending...');
   try {
     const { error } = await db.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/?reset=1'
     });
     if (error) throw error;
-    showAuthSuccess('✓ Reset link sent — check your inbox (and spam folder)');
-    showToast('📧 Password reset email sent — check your inbox!');
-    if (btn) { btn.textContent = '✓ Email sent!'; }
-    setTimeout(hideForgotPassword, 4000);
+    // Close the modal and show a prominent confirmation the user can't miss
+    closeAuthModal();
+    showResetConfirmation(email);
   } catch(e) {
     showAuthError(e.message || 'Could not send reset email');
     if (btn) { btn.disabled = false; btn.textContent = 'Send Reset Link'; }
   }
+}
+
+function showResetConfirmation(email) {
+  const existing = document.getElementById('resetConfirmOverlay');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'resetConfirmOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:18px;padding:2rem 2rem 1.75rem;max-width:380px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem;">📧</div>
+      <h3 style="margin:0 0 0.5rem;font-size:1.15rem;color:#1c2b3a;">Check your inbox</h3>
+      <p style="margin:0 0 1.25rem;color:#666;font-size:0.9rem;line-height:1.5;">
+        We've sent a password reset link to<br>
+        <strong style="color:#1c2b3a;">${email}</strong><br>
+        <span style="font-size:0.82rem;">(Check your spam folder if you don't see it)</span>
+      </p>
+      <button onclick="document.getElementById('resetConfirmOverlay').remove()"
+        style="background:#5a7a4e;color:white;border:none;border-radius:99px;padding:0.65rem 2rem;font-size:0.92rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        Got it
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 
