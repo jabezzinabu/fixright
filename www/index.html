@@ -154,9 +154,10 @@
     background: var(--sage);
     color: white;
     text-align: center;
-    padding: 0.6rem 1rem;
+    padding: 0.75rem 1rem;
     font-size: 0.88rem;
     display: none;
+    font-weight: 500;
   }
   .shared-banner.visible { display: block; }
 
@@ -6311,7 +6312,7 @@ async function loadDemoEstimate() {
         if (estData.beforeImage) vizPhotoDataUrl = estData.beforeImage;
         currentEstimate = estData;
         renderResults(estData);
-        document.getElementById('sharedBanner') && (document.getElementById('sharedBanner').innerHTML = '🎯 This is a sample estimate — <a href="#" onclick="clearResults();return false;" style="color:white;">try your own project</a>');
+        document.getElementById('sharedBanner') && (document.getElementById('sharedBanner').innerHTML = '<span>🎯 This is a sample estimate</span> <a href="#" onclick="clearResults();return false;" style="color:white;font-weight:700;margin-left:0.75rem;text-decoration:underline;">↩ Try your own project</a> <button onclick="clearResults()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:99px;padding:2px 10px;font-size:0.8rem;font-weight:700;cursor:pointer;margin-left:0.5rem;">✕ Close</button>');
         document.getElementById('sharedBanner')?.classList.add('visible');
         showSignupPopup();
         return;
