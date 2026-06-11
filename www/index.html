@@ -4012,7 +4012,30 @@ function renderAdminEstimatesPage() {
 async function setDemoEstimate(id) {
   if (!dbReady) return;
   try {
+    // Save the ID to app_config
     await db.from('app_config').upsert({ key: 'demo_estimate_id', value: id }, { onConflict: 'key' });
+
+    // Also fetch the full estimate and write it to shared_estimates as '__demo__'
+    // so it can be read by anonymous users (shared_estimates is publicly readable)
+    const { data: est, error: estErr } = await db.from('estimates').select('*').eq('id', id).single();
+    if (estErr || !est) throw estErr || new Error('Estimate not found');
+
+    const demoPayload = {
+      title: est.title,
+      priceRange: est.price_range,
+      difficulty: est.difficulty,
+      timeline: est.timeline,
+      materials: est.materials || [],
+      steps: est.steps || [],
+      warnings: est.warnings || [],
+      tip: est.tip || '',
+      desc: est.description || '',
+      vizImage: est.viz_image || null,
+      beforeImage: est.before_image || null,
+      isDemo: true,
+    };
+
+    await db.from('shared_estimates').upsert({ id: '__demo__', data: demoPayload }, { onConflict: 'id' });
     showToast('✅ Demo estimate set!');
   } catch(e) { showToast('Error: ' + e.message); }
 }
@@ -6270,31 +6293,16 @@ async function submitPopupSignup() {
 async function loadDemoEstimate() {
   const btn = document.getElementById('demoBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading sample...'; }
-  // Try to load admin-selected demo estimate
+  // Try to load admin-selected demo estimate from shared_estimates (publicly readable)
   try {
-    let demoId = null;
-    if (dbReady) {
-      const { data } = await db.from('app_config').select('value').eq('key', 'demo_estimate_id').single();
-      demoId = data?.value;
-    }
+    // Wait for DB to be ready (up to 5 seconds)
+    let tries = 0;
+    while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
 
-    if (demoId && dbReady) {
-      const { data: est } = await db.from('estimates').select('*').eq('id', demoId).single();
-      if (est) {
-        const estData = {
-          title: est.title,
-          priceRange: est.price_range,
-          difficulty: est.difficulty,
-          timeline: est.timeline,
-          materials: est.materials,
-          steps: est.steps,
-          warnings: est.warnings,
-          tip: est.tip,
-          desc: est.description || '',
-          vizImage: est.viz_image || null,
-          beforeImage: est.before_image || null,
-          isDemo: true
-        };
+    if (dbReady) {
+      const { data, error } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
+      if (!error && data?.data) {
+        const estData = { ...data.data, isDemo: true };
         // Populate the description field so it matches the demo estimate
         const descEl = document.getElementById('description');
         if (descEl && estData.desc) descEl.value = estData.desc;
