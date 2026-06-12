@@ -1,0 +1,15 @@
+# Git internals
+.git/
+
+# Node
+node_modules/
+**/package-lock.json
+
+# Capacitor (unused mobile scaffold)
+capacitor.config.json
+
+# Vercel internals
+.vercel/
+
+# Claude project memory (handled separately)
+.claude/settings.local.json
