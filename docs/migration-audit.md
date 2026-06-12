@@ -154,6 +154,8 @@ Extract the `<style>` block to external files. No JS changes. No behavior change
 Move large constant objects out of JS blocks into separate files.
 - `retailer-data.js` (RETAILERS, PRICE_SOURCES, CONSUMABLE_KEYWORDS)
 - `discover-data.js` (ALL_DISCOVER_ITEMS, DISCOVER_CAT_PHOTOS, EXAMPLE_PHOTOS)
+  - ⚠️ This file will be ~1 MB due to embedded base64 images — add `defer` to its `<script>` tag
+  - ⚠️ Add `www/js/discover-data.js` to `.claudeignore` immediately after extraction so Claude never reads it in full
 - `measurement.js` (COVERAGE_RATES, MATERIAL_KEYWORDS — data portion only)
 - Load via `<script src>` before the main script block
 - **Test:** Estimate runs, Discover tab loads, retailer badges appear
@@ -274,7 +276,7 @@ Read docs/migration-audit.md Phase $ARGUMENTS, then implement that phase only. D
 
 | Risk | Mitigation |
 |------|-----------|
-| Monkey-patches break after extraction | Replace with direct calls during Phase 6; document the three patch sites (lines ~4226, ~4537, ~4548, ~6458) |
+| Monkey-patches break after extraction | Replace with direct calls during Phase 6; exact patch sites in index.html: line 2730 (`_origSwitchTab`), 3041 (`_origHandleVizPhoto`), 3052 (`_origRunVisualize`), 4963 (`_origRenderResults`) |
 | Global state references break | Create `state.js` as single object before extracting any module; update all reads/writes in one pass |
 | Auth race conditions (already present) | Do not change auth logic during migration; extract as-is |
 | Admin section exposes sensitive routes | Add `isAdmin()` gate at top of `admin.js`; lazy-load with dynamic `import()` |

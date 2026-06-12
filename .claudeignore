@@ -11,5 +11,9 @@ capacitor.config.json
 # Vercel internals
 .vercel/
 
+# Large files Claude should never read in full
+# discover-data.js contains ~1 MB of AI-generated base64 image blobs
+www/js/discover-data.js
+
 # Claude project memory (handled separately)
 .claude/settings.local.json
