@@ -785,6 +785,7 @@
 <script src="js/discover-data.js" defer></script>
 <script src="js/measurement-data.js"></script>
 <script src="js/retailer-data.js"></script>
+<script src="js/ui.js"></script>
 <script>
 // ─── CONFIG — replace these with your Supabase credentials ───────────────────
 const SUPABASE_URL = 'https://zciyiltkaunbozoedfcr.supabase.co';
@@ -1524,16 +1525,6 @@ function hideResults() {
   const p = document.getElementById('vizBeforeAfterPanel');
   if (p) p.style.display = 'none';
 }
-function hideError() { const e = document.getElementById('errorBox'); e.classList.remove('visible'); e.textContent = ''; }
-function showError(msg) { const e = document.getElementById('errorBox'); e.textContent = msg; e.classList.add('visible'); }
-
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
-}
 
 // ─── AUTH ─────────────────────────────────────────────────────────────────────
 let currentUser = null;
@@ -1764,18 +1755,6 @@ document.addEventListener('click', e => {
     document.getElementById('userDropdown')?.classList.remove('open');
   }
 });
-
-function showAuthError(msg) {
-  const el = document.getElementById('authError');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authSuccess').style.display = 'none';
-}
-function showAuthSuccess(msg) {
-  const el = document.getElementById('authSuccess');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('authError').style.display = 'none';
-}
-
 
 // ─── TAB SWITCHING ────────────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -2850,74 +2829,8 @@ const _origSwitchTab = switchTab;
 </div>
 
 
+<script src="js/pwa.js"></script>
 <script>
-// ── PWA: Service Worker Registration ─────────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(r => console.log('DIY Estimator SW registered'))
-      .catch(e => console.log('SW registration failed:', e));
-  });
-}
-
-// ── PWA: Install Prompt ───────────────────────────────────────────────────────
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show install banner after 30 seconds or after first estimate
-  setTimeout(showInstallBanner, 30000);
-});
-
-function showInstallBanner() {
-  if (!deferredPrompt || localStorage.getItem('fixright_installed')) return;
-  const banner = document.createElement('div');
-  banner.id = 'installBanner';
-  banner.style.cssText = `
-    position:fixed;bottom:calc(1.5rem + var(--safe-bottom));left:50%;
-    transform:translateX(-50%);
-    background:#1c2b3a;color:white;border-radius:12px;
-    padding:0.85rem 1.25rem;display:flex;align-items:center;gap:0.85rem;
-    box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:9998;
-    max-width:340px;width:calc(100% - 2rem);
-    animation:fadeUp 0.3s ease both;
-    border:1px solid rgba(200,150,42,0.3);
-  `;
-  banner.innerHTML = `
-    <span style="font-size:1.5rem">📱</span>
-    <div style="flex:1">
-      <div style="font-weight:600;font-size:0.9rem">Add DIY Estimator to Home Screen</div>
-      <div style="font-size:0.76rem;color:rgba(255,255,255,0.6);margin-top:2px">Works offline, feels like a native app</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.35rem">
-      <button onclick="installPWA()" style="background:#b5451b;color:white;border:none;border-radius:7px;padding:0.4rem 0.75rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Install</button>
-      <button onclick="dismissInstall()" style="background:none;border:none;color:rgba(255,255,255,0.45);font-size:0.75rem;cursor:pointer;font-family:'DM Sans',sans-serif;">Not now</button>
-    </div>
-  `;
-  document.body.appendChild(banner);
-}
-
-async function installPWA() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') {
-    localStorage.setItem('fixright_installed', '1');
-    showToast('✓ DIY Estimator added to your home screen!');
-  }
-  deferredPrompt = null;
-  dismissInstall();
-}
-
-function dismissInstall() {
-  const b = document.getElementById('installBanner');
-  if (b) b.remove();
-}
-
-window.addEventListener('appinstalled', () => {
-  localStorage.setItem('fixright_installed', '1');
-  deferredPrompt = null;
-});
 
 // ─── GUIDED VIZ FLOW ──────────────────────────────────────────────────────────
 let vizCurrentStep = 1;
@@ -4236,20 +4149,6 @@ function showResetConfirmation(email) {
 }
 
 
-// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
-function openImgLightbox(src) {
-  document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightboxLabel').textContent = label || '';
-  document.getElementById('lightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
-
-
 // ─── PASSWORD RESET HANDLER ───────────────────────────────────────────────────
 function checkPasswordResetRedirect() {
   const hash = window.location.hash;
@@ -4673,27 +4572,6 @@ const _origRenderResults = renderResults;
 const _origShowSavePrompt = typeof showSavePrompt === 'function' ? showSavePrompt : null;
 
 
-function togglePwd(inputId, btn) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    if (input.type === 'password') {
-      input.type = 'text';
-      btn.textContent = '🙈';
-    } else {
-      input.type = 'password';
-      btn.textContent = '👁';
-    }
-  }
-
-function openImgLightbox(src) {
-  document.getElementById('imgLightboxSrc').src = src;
-  document.getElementById('imgLightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeImgLightbox() {
-  document.getElementById('imgLightbox').classList.remove('open');
-  document.body.style.overflow = '';
-}
 
 </script>
 
