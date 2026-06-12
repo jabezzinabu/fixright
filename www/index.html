@@ -3203,7 +3203,8 @@ const DISCOVER_CAT_PHOTOS = {
 function renderDiscoverCategories() {
   const grid = document.getElementById('discoverCatGrid');
   grid.innerHTML = ALL_DISCOVER_ITEMS.map((cat, i) => {
-    const catPhoto = DISCOVER_CAT_PHOTOS[cat.id] || DISCOVER_CAT_PHOTOS.living;
+    // Use the first template image from each category as its cover
+    const catPhoto = cat.items[0]?.img || DISCOVER_CAT_PHOTOS[cat.id] || DISCOVER_CAT_PHOTOS.living;
     return `
     <div class="discover-cat-card" style="animation-delay:${i*0.06}s" onclick="showRoomView('${cat.id}')">
       <img src="${catPhoto}" alt="${cat.label}" loading="lazy"
