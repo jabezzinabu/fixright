@@ -1,0 +1,77 @@
+/* ── BASE — variables, reset, body, layout, animations ─────────────────────── */
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --cream: #FAFAF8;
+  --cream-dark: #f0f0ee;
+  --navy: #ffffff;
+  --navy-light: #f5f5f3;
+  --rust: #E8481C;
+  --rust-light: #ff5e2e;
+  --gold: #E8481C;
+  --sage: #4a6741;
+  --paper: #ffffff;
+  --ink: #111111;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --shadow: rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #FAFAF8;
+  background-image: radial-gradient(ellipse at 10% 0%, rgba(232,72,28,0.04) 0%, transparent 50%);
+  color: #111111;
+  min-height: 100vh;
+  padding-bottom: var(--safe-bottom);
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+button, a, .app-tab, .discover-card, .stat-card {
+  touch-action: manipulation;
+}
+
+/* MAIN LAYOUT */
+.container { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+#appBody { margin-top: 0; }
+
+/* PAGE SECTIONS */
+.page-section { display: none; }
+.page-section.active { display: block; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+
+/* MOBILE TWEAKS */
+@media (max-width: 480px) {
+  .form-body { padding: 1.25rem; }
+  .result-body { padding: 1.25rem; }
+  .result-header { padding: 1.25rem; }
+  .action-bar { padding: 1rem 1.25rem; }
+  .container { padding: 1.5rem 0.85rem 4rem; }
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer {
+  0%,100% { opacity: 1; } 50% { opacity: 0.7; }
+}
