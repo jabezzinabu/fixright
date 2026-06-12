@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-06-11 — Phase 4: Auth Extraction
+
+**Session goal:** Extract all authentication code from index.html into `www/js/auth.js`.
+
+**Completed:**
+
+- `www/js/auth.js` created — 519 lines covering:
+  - Session management: `checkSession`, `onAuthStateChange`, `setUser`, `clearUser`
+  - Role system: `checkUserRole`, `grantSuperAdmin`, `grantPro`, `isAdmin`, `isPro`
+  - Auth modal: `showAuthModal`, `closeAuthModal`, `switchAuthTab`, `submitAuth`
+  - OAuth: `signInWithGoogle`, `signInWithApple`
+  - Account: `signOut`, `toggleUserMenu` + outside-click listener
+  - Change password: `showChangePasswordModal`, `submitChangePassword`
+  - Forgot password: `showForgotPassword`, `hideForgotPassword`, `sendPasswordReset`, `showResetConfirmation`
+  - Password reset handler: `checkPasswordResetRedirect`, `showPasswordResetModal`, `submitPasswordReset`
+  - Signup popup: `showSignupPopup`, `closeSignupPopup`, `submitPopupSignup`, `showSignupPopupForEstimate`
+- index.html: 520 lines removed, reduced 4,582 → 4,062
+- `let currentUser = null` and `const SUPER_ADMIN_EMAIL` intentionally left in index.html — both are globals referenced by auth.js and other modules; `SUPER_ADMIN_EMAIL` kept out of auth.js since it is a config constant, not auth logic
+- `<script src="js/auth.js">` added to load order after `ui.js`
+
+**Decision:** `SUPER_ADMIN_EMAIL` stays in index.html (alongside Supabase anon key) rather than moving to auth.js. It is app-level config, not auth logic, and both files are equally public.
+
+*Commit this session:*
+- `3cf93f6` Phase 4 complete: extract auth to auth.js
+
+**Files created:** `www/js/auth.js`
+**Files modified:** `www/index.html`
+
+**Open risks for Phase 5:**
+- `currentUser` is still a bare global `var` — Phase 5 (estimate.js) reads it heavily; do not change the declaration until `state.js` is wired in (Phase 8 target)
+- `_vizCredits` is referenced in `submitAuth` (inside auth.js) but declared and managed in index.html — this coupling will surface in Phase 5/6 when viz code moves out
+- Four monkey-patches still in index.html (`_origSwitchTab`, `_origHandleVizPhoto`, `_origRunVisualize`, `_origRenderResults`, `_origShowSavePrompt`) — not touched until Phase 6
+- `EXAMPLE_PHOTOS` and `DISCOVER_CAT_PHOTOS` still in index.html (Unsplash URLs, not base64) — deferred
+
+**Next step:** Phase 5 — extract `estimate.js` (photo upload, `runEstimate`, `renderResults`, drawer, save/load) and `measurement.js` logic portion
+
+---
+
 ## 2026-06-11 — Phases 2 & 3: Static Data Extraction + UI/PWA Modules
 
 **Session goal:** Complete Phase 2 (static data constants) and Phase 3 (pure utility modules: ui.js, pwa.js).
