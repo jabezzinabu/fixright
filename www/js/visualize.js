@@ -101,6 +101,7 @@ function handleVizPhoto(file) {
       document.getElementById('vizPhotoPlaceholder').style.display = 'none';
       document.getElementById('vizPhotoClear').style.display = 'flex';
       document.getElementById('vizPhotoInput').style.zIndex = '-1';
+      document.getElementById('step1Next').disabled = false;
     };
     img.src = e.target.result;
   };
@@ -152,7 +153,9 @@ async function runVisualize() {
 
   if (!vizPhotoBase64) { showToast('Please upload your space photo first'); return; }
   if (!desc && !vizConceptItem) { showToast('Please describe what you want, or pick a concept from Discover'); return; }
-
+  if (desc && vizSelectedStyle && !desc.toLowerCase().includes(vizSelectedStyle.toLowerCase())) {
+    document.getElementById('vizDesc').value = vizSelectedStyle + ' style: ' + desc;
+  }
 
   setVizLoading(true);
   document.getElementById('vizResult').classList.remove('visible');
