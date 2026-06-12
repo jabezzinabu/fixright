@@ -114,3 +114,37 @@ discover-data.js (defer) → measurement-data.js → retailer-data.js → ui.js 
 **Next step:** Phase 2 — extract static data constants (`retailer-data.js`, `discover-data.js`, measurement data portion of `measurement.js`)
 
 ---
+
+## 2026-06-11 — Phase 6a: Extract visualize.js
+
+**Session goal:** Extract all visualization-related code from index.html into `www/js/visualize.js`. Scoped to viz only — discover.js and monkey-patch removal deferred to Phase 6b.
+
+**Completed:**
+
+- `www/js/visualize.js` created — 1,063 lines covering:
+  - VIZ USAGE TRACKING: `_vizCredits`, `loadVizCredits`, `checkVizCredits`, `deductVizCredit`, `addVizCredits`, `updateFreeNotice`, compat shims (`getVizCount`, `checkFreeVizUsed`, `incVizCount`, `markFreeVizUsed`)
+  - VIZ PHOTO HANDLING: `vizPhotoBase64/DataUrl/Blob`, `vizConceptItem/Base64/ImgSrc`, `handleVizPhoto`, `clearVizPhoto`, drag/drop listener
+  - RUN VISUALIZATION: `runVisualize`, `newViz`, `downloadViz`, `shareViz`, `showVizPackageModal`, `buyVizPackage`, `checkVizPurchaseReturn` IIFE, `goUpgrade` compat, `getStripeConfig`
+  - VIZ UI HELPERS: `setVizLoading`, `setVizProgress`, `setVizStep`, `hideVizError`, `showVizError`
+  - ESTIMATE THIS DESIGN (delta analysis): `estimateThisDesign`
+  - EDIT & RE-RENDER: `showEditPanel`, `hideEditPanel`, `reRender`
+  - GUIDED VIZ FLOW: `vizCurrentStep`, `vizSelectedStyle`, `styleIcons`, `goVizStep`, `selectStyle`
+  - EXAMPLE PHOTOS: `EXAMPLE_PHOTOS`, `useExamplePhoto`
+  - VIZ TOGGLE MODE: `vizModeEnabled`, `toggleVizMode`
+  - COMBINED VIZ: `showCombinedViz`, `openFullViz`, `runCombinedEstimate`, `generateCombinedViz`, `reRenderViz`, `confirmVizAndEstimate`
+- `www/index.html` reduced from 3,313 → 2,255 lines (−1,058 net)
+- `<script src="js/visualize.js"></script>` added after `estimate.js` in load order
+
+**Decisions:**
+- `saveOpenAIKey` / `getOpenAIKey` left in index.html — not viz-specific, misplaced in original
+- `EXAMPLE_PHOTOS` moved with `useExamplePhoto` (its only caller) — clarified it is distinct from `ALL_DISCOVER_ITEMS` (base64 blobs) and not subject to the no-Unsplash rule
+- Monkey patches (`_origHandleVizPhoto`, `_origRunVisualize`, `_origSwitchTabDiscover`) left untouched per user instruction — to be wired directly in Phase 6b
+
+**Open risks:**
+- Three monkey-patches still in index.html wrapping `handleVizPhoto`, `runVisualize`, and `switchTab`; until replaced they must remain or the guided flow and discover tab will break
+- `discover.js` extraction not yet done — `filterDiscover`, `renderDiscoverCategories`, `showRoomView`, `openDetailSheet`, carousel, `sheetVisualizeOnMySpace`, `loadConceptFromDiscover`, `clearConcept`, `sheetJustEstimate`, `discoverTryIt`, and `_origSwitchTabDiscover` all remain in index.html
+- `saveOpenAIKey` / `getOpenAIKey` orphaned in index.html between `switchTab` and admin dashboard — consider moving to a utils module in a future phase
+
+**Next step:** Phase 6b — extract discover.js, then replace all three monkey-patches with direct calls in the init sequence
+
+---
