@@ -1,4 +1,14 @@
 // ─── PHOTO HANDLING ───────────────────────────────────────────────────────────
+function updateSubmitButton() {
+  const btn = document.getElementById('submitBtn');
+  if (!btn) return;
+  if (imageBase64 && typeof _vizCredits !== 'undefined' && _vizCredits > 0) {
+    btn.textContent = '✨ Get Estimate & Visualization';
+  } else {
+    btn.textContent = '🔧 Get My Estimate';
+  }
+}
+
 function triggerFile() {
   // No longer needed — input covers zone directly
 }
@@ -27,7 +37,7 @@ function handleFile(file) {
       preview.style.display = 'block';
       document.getElementById('photoPlaceholder').style.display = 'none';
       document.getElementById('photoClear').style.display = 'flex';
-
+      updateSubmitButton();
     };
     img.src = e.target.result;
   };
@@ -41,6 +51,7 @@ function clearPhoto(e) {
   document.getElementById('photoPlaceholder').style.display = 'block';
   document.getElementById('photoClear').style.display = 'none';
   document.getElementById('photoInput').value = '';
+  updateSubmitButton();
 }
 
 const zone = document.getElementById('photoZone');
