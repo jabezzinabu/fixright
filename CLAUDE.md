@@ -44,9 +44,8 @@ AI-powered home repair cost estimator. Users upload a photo, get a before/after 
 - Admin email is `jabezzinabu@gmail.com` — excluded from analytics tracking via `SUPER_ADMIN_EMAIL`
 
 **Service worker cache**
-- Bump the `CACHE` version in `www/sw.js` every time any JS or CSS file is modified
+- EVERY commit that modifies any JS or CSS file MUST bump the CACHE version in `www/sw.js` — no exceptions. Forgetting this will cause users to run stale code silently. Current version: v4
 - New JS/CSS files must also be added to the `STATIC` array in `www/sw.js`
-- Failure to do this means users get stale cached files and new code is silently ignored
 
 **Deployment**
 - Deploy = `git push origin main` — Vercel auto-deploys on push
