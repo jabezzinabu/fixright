@@ -152,3 +152,50 @@ discover-data.js (defer) → measurement-data.js → retailer-data.js → ui.js 
 ## Phase 6b — Known Bug
 
 **Known bug:** After the Phase 6b deploy, viz photo upload on the guided flow does not enable the `step1Next` button. Root cause unconfirmed. Investigate after Phase 8 is complete.
+
+---
+
+## 2026-06-12 — Phase 7: Extract admin.js (lazy-loaded)
+
+**Session goal:** Extract all admin dashboard JS from index.html into `www/js/admin.js`, lazy-loaded only when `isAdmin()` returns true.
+
+**Pre-session state:** index.html at 1,966 lines (post-phases 1–6b)
+
+**Completed:**
+
+- Confirmed auth timing before writing any code: `grantSuperAdmin()` in auth.js sets `currentUser.role = 'admin'` and makes `#tabAdmin` visible in the same synchronous call — the tab cannot be clicked before `isAdmin()` returns true, so the top-of-file guard is defense-in-depth, not a timing fix.
+
+- `www/js/admin.js` created — 511 lines with `isAdmin()` guard + `window._adminLoaded = true` at top, covering:
+  - **Dashboard:** `loadAdminData`, `loadAdminStats`
+  - **Estimates table:** `_adminEstimates`, `_adminEstPage`, `ADMIN_EST_PAGE_SIZE`, `loadAdminEstimates`, `renderAdminEstimatesPage`, `setDemoEstimate`, `adminEstPrev`, `adminEstNext`
+  - **User management:** `_allUsers`, `loadAdminUsers`, `renderUsersTable`, `filterUsers`, `confirmDeleteUser`, `grantRoleByEmail`, `setUserRole`
+  - **Feature flags:** `toggleDiscoverPublic`, `saveFlag`
+  - **Utilities:** `formatRegion`, `copySql`
+  - **Health checks:** `runHealthChecks`
+  - **Create user:** `adminCreateUser`, `getServiceKey`, `generateTempPassword`
+  - **Analytics:** `_analyticsPeriod`, `_analyticsData`, `setAnalyticsPeriod`, `loadAnalytics`, `renderAnalytics`, `renderAnalyticsChart`
+
+- `www/index.html` modified:
+  - `switchTab()` updated to lazy-load `admin.js` via `<script>` injection on first admin tab click; `loadAdminData()` called in `onload`. Subsequent tab switches go through the `window._adminLoaded` branch and call `loadAdminData()` directly.
+  - All four admin JS blocks removed from both inline `<script>` tags (admin dashboard, health checks, create user, analytics)
+  - **1,966 → 1,462 lines (−504)**
+
+**What was intentionally left in index.html:**
+- Admin HTML section (`#sectionAdmin`, lines 522–746, ~225 lines) — passive markup only, no logic, no sensitive data; Phase 8 will slim it further
+- `SUPER_ADMIN_EMAIL` constant — also referenced by `trackEvent()` which runs for all users; cannot move to admin.js without breaking that function
+- Admin tab button (`#tabAdmin`, line 67) — static nav HTML
+
+**Commit:** `da3d015` Phase 7 complete: extract admin.js with lazy-load and isAdmin guard
+
+**Files created:** `www/js/admin.js`
+**Files modified:** `www/index.html`, `docs/task-log.md`, `.gitignore`
+
+**Open risks for Phase 8:**
+
+- Admin HTML (`#sectionAdmin`, ~225 lines) is still served to all users on every page load. It is inert markup but contributes to index.html size. Phase 8 could inject it dynamically from admin.js or strip it in the shell-only rewrite.
+- `SUPER_ADMIN_EMAIL` is a global in index.html referenced by both `trackEvent()` and admin.js. If state.js is wired up in Phase 8, consider moving it there so admin.js has a clean import path.
+- `saveOpenAIKey` / `getOpenAIKey` remain orphaned in index.html between `switchTab` and the now-empty space where the admin block was. They are not admin-specific; Phase 8 should move them to a utils module.
+- The `grantSuperAdmin()` dropdown item in auth.js calls `loadAdminData()` directly (auth.js line 85). This is safe today — admin.js is always loaded before the dropdown item could be clicked (tab switch fires first). But if any future code path calls `loadAdminData()` before `admin.js` has loaded, it will throw. The `window._adminLoaded` flag only guards repeat loads, not early calls.
+- Phase 6b viz photo bug (guided flow `step1Next` button) still unresolved — carry forward.
+
+**Next step:** Phase 8 — slim index.html to shell only (`<head>`, nav HTML, section wrapper divs, `<script>` init call); full integration regression test
