@@ -148,3 +148,7 @@ discover-data.js (defer) → measurement-data.js → retailer-data.js → ui.js 
 **Next step:** Phase 6b — extract discover.js, then replace all three monkey-patches with direct calls in the init sequence
 
 ---
+
+## Phase 6b — Known Bug
+
+**Known bug:** After the Phase 6b deploy, viz photo upload on the guided flow does not enable the `step1Next` button. Root cause unconfirmed. Investigate after Phase 8 is complete.
