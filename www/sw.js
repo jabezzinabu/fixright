@@ -1,4 +1,4 @@
-const CACHE = 'fixright-v2';
+const CACHE = 'fixright-v3';
 const STATIC = [
   '/',
   '/index.html',
