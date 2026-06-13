@@ -1064,3 +1064,26 @@ IMPORTANT: Use the area measurements above to calculate accurate material quanti
     actions.innerHTML = `<button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩ Try Again</button>`;
   }
 }
+
+function checkStripeRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const stripeStatus = params.get('stripe');
+  if (stripeStatus === 'success') {
+    window.history.replaceState({}, document.title, '/');
+    setTimeout(() => {
+      showToast('🎉 Welcome to Pro! Your account will be activated shortly.');
+      if (db && currentUser) {
+        db.from('profiles').select('role').eq('id', currentUser.id).single()
+          .then(({ data }) => {
+            if (data?.role) {
+              currentUser.role = data.role;
+              grantSuperAdmin();
+            }
+          });
+      }
+    }, 1000);
+  } else if (stripeStatus === 'cancel') {
+    window.history.replaceState({}, document.title, '/');
+    showToast('Checkout cancelled — no charge made');
+  }
+}

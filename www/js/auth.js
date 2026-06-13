@@ -1,3 +1,6 @@
+let currentUser = null;
+const SUPER_ADMIN_EMAIL = 'jabezzinabu@gmail.com';
+
 let authMode = 'signin';
 
 async function checkSession() {

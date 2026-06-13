@@ -476,3 +476,188 @@ function loadSaved(id) {
     document.getElementById('resultCard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 200);
 }
+
+async function loadSharedEstimate(shareId) {
+  let tries = 0;
+  while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 150)); tries++; }
+  if (!dbReady) { showToast('Could not load shared estimate'); return; }
+  try {
+    const { data, error } = await db.from('shared_estimates').select('data').eq('id', shareId).single();
+    if (error || !data) throw error || new Error('not found');
+    document.getElementById('sharedBanner').classList.add('visible');
+    renderResults(data.data);
+    window.history.replaceState({}, document.title, location.pathname);
+  } catch(e) {
+    console.error('Load shared failed:', e);
+    showToast('This shared estimate could not be found');
+  }
+}
+
+function newEstimate() {
+  hideResults(); hideError();
+  document.getElementById('description').value = '';
+  clearPhoto(new Event('click'));
+  currentEstimate = null;
+  location.hash = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyMaterials() {
+  if (!currentEstimate?.materials) return;
+  const lines = currentEstimate.materials.map(m => `• ${m.item} — ${m.qty} ${m.unit} (${m.cost})`).join('\n');
+  const text = `${currentEstimate.title}\nEstimated: ${currentEstimate.priceRange}\n\nMaterials:\n${lines}\n\n— via DIY Estimator`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('📋 Materials list copied!'))
+      .catch(() => copyFallback(text));
+  } else {
+    copyFallback(text);
+  }
+}
+function copyFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try { document.execCommand('copy'); showToast('📋 Materials list copied!'); }
+  catch(e) { showToast('Copy failed — please copy manually'); }
+  document.body.removeChild(ta);
+}
+
+function getEstCount() { return parseInt(localStorage.getItem('fixright_est_count') || '0'); }
+function incEstCount() { localStorage.setItem('fixright_est_count', getEstCount() + 1); }
+function checkEstPaywall() { return true; }
+
+function showSavePrompt() {
+  const el = document.getElementById('savePrompt');
+  if (el) { el.classList.add('visible'); }
+}
+function hideSavePrompt() {
+  const el = document.getElementById('savePrompt');
+  if (el) el.classList.remove('visible');
+}
+
+function isConsumable(itemName) {
+  const lower = itemName.toLowerCase();
+  return CONSUMABLE_KEYWORDS.some(k => lower.includes(k));
+}
+
+function getRetailers() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  return RETAILERS[region] || RETAILERS['us-national'];
+}
+
+function getCurrencySymbol() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  if (region === 'uk') return '£';
+  if (region === 'au') return 'A$';
+  if (region === 'ca') return 'CA$';
+  return '$';
+}
+
+function getCurrencyLocale() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  if (region === 'uk') return 'en-GB';
+  if (region === 'au') return 'en-AU';
+  if (region === 'ca') return 'en-CA';
+  return 'en-US';
+}
+
+function getPriceSource() {
+  const region = document.getElementById('region')?.value || 'us-national';
+  return PRICE_SOURCES[region] || PRICE_SOURCES['us-national'];
+}
+
+function buildRetailerBadges(itemName) {
+  if (isConsumable(itemName)) return '';
+  const retailers = getRetailers();
+  const query = encodeURIComponent(itemName);
+  return `<div class="mat-retailers">${
+    retailers.map(r =>
+      `<a href="${r.url}${query}" target="_blank" rel="noopener" class="retailer-badge ${r.cls}">BUY ${r.name} →</a>`
+    ).join('')
+  }</div>`;
+}
+
+async function trackAnonymousEstimate() {
+  await trackEvent('estimates_count');
+}
+
+async function loadDemoEstimate() {
+  const btn = document.getElementById('demoBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading sample...'; }
+  try {
+    let tries = 0;
+    while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
+
+    if (dbReady) {
+      const { data, error } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
+      if (!error && data?.data) {
+        const estData = { ...data.data, isDemo: true };
+        const descEl = document.getElementById('description');
+        if (descEl && estData.desc) descEl.value = estData.desc;
+        if (estData.vizImage) vizResultImageSrc = estData.vizImage;
+        if (estData.beforeImage) vizPhotoDataUrl = estData.beforeImage;
+        currentEstimate = estData;
+        renderResults(estData);
+        document.getElementById('sharedBanner') && (document.getElementById('sharedBanner').innerHTML = '<span>🎯 This is a sample estimate</span> <a href="#" onclick="clearResults();return false;" style="color:white;font-weight:700;margin-left:0.75rem;text-decoration:underline;">↩ Try your own project</a> <button onclick="clearResults()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:99px;padding:2px 10px;font-size:0.8rem;font-weight:700;cursor:pointer;margin-left:0.5rem;">✕ Close</button>');
+        document.getElementById('sharedBanner')?.classList.add('visible');
+        showSignupPopup();
+        return;
+      }
+    }
+
+    const demo = {
+      title: 'Replace Bathroom Tile Floor (10×8 ft)',
+      priceRange: '$850 – $1,400',
+      difficulty: 'Moderate',
+      timeline: '2–3 days',
+      isDemo: true,
+      materials: [
+        { item: 'Porcelain floor tiles (12×24")', qty: 12, unit: 'boxes', cost: '$480' },
+        { item: 'Tile adhesive / thin-set mortar', qty: 3, unit: 'bags', cost: '$75' },
+        { item: 'Grout (sanded, grey)', qty: 2, unit: 'bags', cost: '$40' },
+        { item: 'Tile spacers', qty: 1, unit: 'pack', cost: '$8' },
+        { item: 'Cement backer board', qty: 4, unit: 'sheets', cost: '$60' },
+        { item: 'Waterproofing membrane', qty: 1, unit: 'roll', cost: '$55' },
+        { item: 'Grout sealer', qty: 1, unit: 'bottle', cost: '$18' },
+        { item: 'Tools & supplies', qty: 1, unit: 'set', cost: '$90' },
+      ],
+      steps: [
+        'Remove existing tile and clean subfloor thoroughly',
+        'Inspect and repair any soft spots in the subfloor',
+        'Install cement backer board and waterproofing membrane',
+        'Plan tile layout starting from center of room',
+        'Apply thin-set and lay tiles with consistent spacing',
+        'Allow adhesive to cure for 24 hours before grouting',
+        'Apply grout, clean excess, and seal after 72 hours',
+      ],
+      warnings: [
+        'Turn off water supply before removing old tile near plumbing',
+        'Ensure subfloor is level — use self-leveling compound if needed',
+      ],
+      tip: 'Rent a tile saw for clean cuts — it will save you hours of work and give professional results.',
+    };
+    currentEstimate = demo;
+    renderResults(demo);
+    const banner = document.getElementById('sharedBanner');
+    if (banner) {
+      banner.innerHTML = '🎯 This is a sample estimate — <a href="#" onclick="clearResults(event)" style="color:white;font-weight:600;">try your own project</a>';
+      banner.classList.add('visible');
+    }
+    setTimeout(showSignupPopup, 2000);
+  } catch(e) {
+    showToast('Could not load demo — try running your own estimate!');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '👀 See a sample estimate'; }
+  }
+}
+
+function clearResults(e) {
+  if (e) e.preventDefault();
+  document.getElementById('results').classList.remove('visible');
+  const banner = document.getElementById('sharedBanner');
+  if (banner) banner.classList.remove('visible');
+  currentEstimate = null;
+}

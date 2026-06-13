@@ -45,3 +45,68 @@ function closeImgLightbox() {
   document.getElementById('imgLightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+function setLoading(on) {
+  document.getElementById('loading').classList.toggle('visible', on);
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = on;
+  btn.textContent = on ? '⏳ Generating estimate...' : '🔧 Get My Estimate';
+}
+function hideResults() {
+  document.getElementById('results').classList.remove('visible');
+  const p = document.getElementById('vizBeforeAfterPanel');
+  if (p) p.style.display = 'none';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (tab === 'visualize') {
+    updateFreeNotice();
+    const existing = document.getElementById('proOverrideBanner');
+    if (isPro() && !existing) {
+      const banner = document.createElement('div');
+      banner.id = 'proOverrideBanner';
+      banner.className = 'pro-override-banner';
+      banner.innerHTML = '<span class="icon">👑</span><p><strong>Pro / Admin access active</strong> — unlimited visualizations, no paywall.</p>';
+      const vcb = document.querySelector('.viz-card-body');
+      vcb.insertBefore(banner, vcb.firstChild);
+      const fn = document.getElementById('vizFreeNotice');
+      if (fn) fn.style.display = 'none';
+    }
+  }
+  if (tab === 'admin') { loadAdminData(); }
+  if (tab === 'discover') { showCategoryView(); renderDiscoverCategories(); }
+}
+
+function toggleSection(id) {
+  const content = document.getElementById(id + 'Content');
+  const arrow = document.getElementById(id + 'Arrow');
+  if (!content) return;
+  content.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
+async function trackEvent(eventType) {
+  if (currentUser?.role === 'admin' || currentUser?.email === 'jabezzinabu@gmail.com') return;
+  let tries = 0;
+  while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
+  if (!dbReady) return;
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await db.rpc('increment_stat', { p_date: today, p_column: eventType });
+    if (error) {
+      const { data: row } = await db.from('usage_stats').select('*').eq('date', today).single().catch(() => ({ data: null }));
+      if (row) {
+        await db.from('usage_stats').update({ [eventType]: (row[eventType] || 0) + 1 }).eq('date', today);
+      } else {
+        const insertData = { date: today, estimates_count: 0, signups_count: 0, visualizations_count: 0, visitors_count: 0, paid_conversions: 0 };
+        insertData[eventType] = 1;
+        await db.from('usage_stats').insert(insertData);
+      }
+    }
+  } catch(e) { console.warn('trackEvent failed:', eventType, e.message); }
+}
