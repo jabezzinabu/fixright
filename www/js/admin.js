@@ -508,3 +508,257 @@ function renderAnalyticsChart(data) {
     </div>`;
   }).join('');
 }
+
+// ─── AGENT HUB ────────────────────────────────────────────────────────────────
+
+const AGENTS = [
+  { name: 'code-review',      desc: 'Scans for bugs, code quality, and maintainability issues',   prompt: 'Run the code-review agent' },
+  { name: 'schema-check',     desc: 'Validates Supabase schema against app expectations',          prompt: 'Run the schema-check agent' },
+  { name: 'retailer-price',   desc: 'Audits retailer pricing data for accuracy and staleness',     prompt: 'Run the retailer-price agent' },
+  { name: 'safari-check',     desc: 'Finds Safari/PWA compatibility issues in a file',             prompt: 'Run the safari-check agent on [filename]' },
+  { name: 'dead-code',        desc: 'Detects unused functions and unreachable code in a file',     prompt: 'Run the dead-code agent on [filename]' },
+  { name: 'api-check',        desc: 'Validates API endpoints, payloads, and error handling',       prompt: 'Run the api-check agent' },
+  { name: 'console-check',    desc: 'Finds leftover console.log and debug artifacts in a file',   prompt: 'Run the console-check agent on [filename]' },
+  { name: 'conversion-audit', desc: 'Audits the conversion funnel for friction and drop-off',     prompt: 'Run the conversion-audit agent' },
+  { name: 'funnel-check',     desc: 'Checks user flows for broken paths and missing CTAs',         prompt: 'Run the funnel-check agent' },
+];
+
+let _agentRuns = [];
+let _flatFindings = [];
+
+const _SEV_STYLE = {
+  high:   { bg: '#fef2f2', color: '#dc2626', border: '#fca5a5' },
+  medium: { bg: '#fffbeb', color: '#d97706', border: '#fcd34d' },
+  low:    { bg: '#f0fdf4', color: '#16a34a', border: '#86efac' },
+  info:   { bg: '#eff6ff', color: '#2563eb', border: '#93c5fd' },
+};
+
+const _STAT_STYLE = {
+  new:         { bg: '#eff6ff', color: '#2563eb' },
+  in_progress: { bg: '#fffbeb', color: '#d97706' },
+  resolved:    { bg: '#f0fdf4', color: '#16a34a' },
+  ignored:     { bg: '#f3f4f6', color: '#6b7280' },
+};
+
+function switchAdminTab(tab) {
+  const isDashboard = tab === 'dashboard';
+  document.getElementById('adminPanelDashboard').style.display = isDashboard ? '' : 'none';
+  document.getElementById('adminPanelAgentHub').style.display  = isDashboard ? 'none' : '';
+  const dbBtn = document.getElementById('adminInnerTabDashboard');
+  const ahBtn = document.getElementById('adminInnerTabAgentHub');
+  if (dbBtn) {
+    dbBtn.style.background   = isDashboard ? '#1c2b3a' : 'white';
+    dbBtn.style.color        = isDashboard ? 'white' : 'var(--muted)';
+    dbBtn.style.borderColor  = isDashboard ? '#1c2b3a' : 'var(--border)';
+    dbBtn.style.fontWeight   = isDashboard ? '600' : '500';
+  }
+  if (ahBtn) {
+    ahBtn.style.background   = isDashboard ? 'white' : '#1c2b3a';
+    ahBtn.style.color        = isDashboard ? 'var(--muted)' : 'white';
+    ahBtn.style.borderColor  = isDashboard ? 'var(--border)' : '#1c2b3a';
+    ahBtn.style.fontWeight   = isDashboard ? '500' : '600';
+  }
+  if (!isDashboard) loadAgentHub();
+}
+
+async function loadAgentHub() {
+  if (!dbReady) return;
+  try {
+    const { data, error } = await db.from('agent_runs')
+      .select('*')
+      .order('created_at', { ascending: false });
+    _agentRuns = error ? [] : (data || []);
+  } catch(e) {
+    _agentRuns = [];
+  }
+  renderAgentCards(_agentRuns);
+  renderFindingsFeed(_agentRuns);
+  const sel = document.getElementById('filterAgent');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">All agents</option>' +
+      AGENTS.map(a => `<option value="${a.name}"${a.name === prev ? ' selected' : ''}>${a.name}</option>`).join('');
+  }
+}
+
+function renderAgentCards(runs) {
+  const grid = document.getElementById('agentCardsGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  AGENTS.forEach(agent => {
+    const lastRun = runs.find(r => r.agent_name === agent.name);
+    const lastRunDate = lastRun ? new Date(lastRun.created_at).toLocaleDateString() : 'Never';
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:0.4rem;';
+
+    const nameEl = document.createElement('div');
+    nameEl.style.cssText = 'font-weight:700;font-size:0.9rem;color:#1c2b3a;';
+    nameEl.textContent = agent.name;
+
+    const descEl = document.createElement('div');
+    descEl.style.cssText = 'font-size:0.78rem;color:var(--muted);flex:1;line-height:1.4;';
+    descEl.textContent = agent.desc;
+
+    const dateEl = document.createElement('div');
+    dateEl.style.cssText = 'font-size:0.72rem;color:var(--muted);';
+    dateEl.textContent = 'Last run: ' + lastRunDate;
+
+    const btn = document.createElement('button');
+    btn.textContent = '📋 Copy Prompt';
+    btn.style.cssText = "background:#1c2b3a;color:white;border:none;border-radius:7px;padding:0.4rem 0.75rem;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:0.35rem;align-self:flex-start;";
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(agent.prompt).then(() => showToast('📋 Prompt copied!'));
+    });
+
+    card.appendChild(nameEl);
+    card.appendChild(descEl);
+    card.appendChild(dateEl);
+    card.appendChild(btn);
+    grid.appendChild(card);
+  });
+}
+
+function renderFindingsFeed(runs) {
+  _flatFindings = [];
+  runs.forEach(run => {
+    (run.findings || []).forEach(f => {
+      _flatFindings.push({ ...f, _runId: run.id, _agentName: run.agent_name, _runDate: run.created_at });
+    });
+  });
+  applyFindingsFilter();
+}
+
+function filterFindings() {
+  applyFindingsFilter();
+}
+
+function applyFindingsFilter() {
+  const agentVal    = document.getElementById('filterAgent')?.value    || '';
+  const severityVal = document.getElementById('filterSeverity')?.value || '';
+  const statusVal   = document.getElementById('filterStatus')?.value   || '';
+
+  const filtered = _flatFindings.filter(f => {
+    if (agentVal    && f._agentName !== agentVal)    return false;
+    if (severityVal && f.severity   !== severityVal) return false;
+    if (statusVal   && f.status     !== statusVal)   return false;
+    return true;
+  });
+
+  const feed = document.getElementById('findingsFeed');
+  if (!feed) return;
+
+  if (!filtered.length) {
+    feed.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:0.85rem;">No findings match the current filter</div>';
+    return;
+  }
+
+  feed.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.overflowX = 'auto';
+  const table = document.createElement('table');
+  table.className = 'admin-table';
+  table.style.display = 'table';
+
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Severity</th><th>Agent</th><th>Category</th><th>Description</th><th>File</th><th>Status</th><th>Notes</th></tr>';
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  filtered.forEach(f => {
+    const sev  = _SEV_STYLE[f.severity]  || _SEV_STYLE.info;
+    const stat = _STAT_STYLE[f.status]   || _STAT_STYLE.new;
+    const fileLine = (f.file && f.file !== 'n/a')
+      ? f.file + (f.line && f.line !== 'n/a' ? ':' + f.line : '')
+      : 'n/a';
+
+    const tr = document.createElement('tr');
+
+    const sevTd = document.createElement('td');
+    const sevBadge = document.createElement('span');
+    sevBadge.style.cssText = `background:${sev.bg};color:${sev.color};border:1px solid ${sev.border};border-radius:99px;padding:2px 8px;font-size:0.72rem;font-weight:700;white-space:nowrap;display:inline-block;`;
+    sevBadge.textContent = f.severity;
+    sevTd.appendChild(sevBadge);
+
+    const agentTd = document.createElement('td');
+    agentTd.style.cssText = 'font-size:0.78rem;font-weight:600;';
+    agentTd.textContent = f._agentName;
+
+    const catTd = document.createElement('td');
+    catTd.style.fontSize = '0.78rem';
+    catTd.textContent = f.category || '—';
+
+    const descTd = document.createElement('td');
+    descTd.style.cssText = 'font-size:0.8rem;max-width:220px;';
+    descTd.textContent = f.description || '—';
+
+    const fileTd = document.createElement('td');
+    fileTd.style.cssText = 'font-size:0.72rem;color:var(--muted);font-family:monospace;white-space:nowrap;';
+    fileTd.textContent = fileLine;
+
+    const statTd = document.createElement('td');
+    const statSel = document.createElement('select');
+    statSel.style.cssText = `padding:0.25rem 0.5rem;border:1.5px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'DM Sans',sans-serif;background:${stat.bg};color:${stat.color};outline:none;cursor:pointer;`;
+    [['new','New'],['in_progress','In Progress'],['resolved','Resolved'],['ignored','Ignored']].forEach(([val,lbl]) => {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = lbl;
+      if (f.status === val) opt.selected = true;
+      statSel.appendChild(opt);
+    });
+    statTd.appendChild(statSel);
+
+    const noteTd = document.createElement('td');
+    const noteInput = document.createElement('input');
+    noteInput.type = 'text';
+    noteInput.value = f.note || '';
+    noteInput.placeholder = 'Add note...';
+    noteInput.style.cssText = "width:100%;min-width:120px;padding:0.3rem 0.5rem;border:1.5px solid var(--border);border-radius:6px;font-size:0.78rem;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;";
+    noteTd.appendChild(noteInput);
+
+    statSel.addEventListener('change', () => updateFindingStatus(f._runId, f.id, statSel.value, noteInput.value));
+    noteInput.addEventListener('blur', ()  => updateFindingStatus(f._runId, f.id, statSel.value, noteInput.value));
+
+    [sevTd, agentTd, catTd, descTd, fileTd, statTd, noteTd].forEach(td => tr.appendChild(td));
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  feed.appendChild(wrap);
+}
+
+async function updateFindingStatus(runId, findingId, status, note) {
+  if (!dbReady) return;
+  try {
+    const { data: run, error: fetchErr } = await db.from('agent_runs')
+      .select('findings')
+      .eq('id', runId)
+      .single();
+    if (fetchErr) throw fetchErr;
+    const findings = (run.findings || []).map(f =>
+      f.id === findingId ? { ...f, status, note } : f
+    );
+    const { error } = await db.from('agent_runs').update({ findings }).eq('id', runId);
+    if (error) throw error;
+    _agentRuns    = _agentRuns.map(r => r.id === runId ? { ...r, findings } : r);
+    _flatFindings = _flatFindings.map(f =>
+      (f._runId === runId && f.id === findingId) ? { ...f, status, note } : f
+    );
+    showToast('✓ Finding updated');
+  } catch(e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+async function logAgentRun(agentName, scannedFiles, findings) {
+  if (!dbReady) throw new Error('DB not ready — ensure you are signed in as admin');
+  const { data, error } = await db.from('agent_runs').insert({
+    agent_name: agentName,
+    scanned_files: scannedFiles,
+    findings: findings,
+  }).select().single();
+  if (error) throw error;
+  console.log('[Agent Hub] Run logged, id:', data.id, '| findings:', findings.length);
+  return data;
+}
+window.logAgentRun = logAgentRun;

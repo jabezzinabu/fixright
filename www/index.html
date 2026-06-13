@@ -531,6 +531,13 @@
       <button onclick="loadAdminData()" style="background:#1c2b3a;color:white;border:none;border-radius:8px;padding:0.55rem 1.1rem;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:0.4rem;">🔄 Refresh</button>
     </div>
 
+    <!-- ADMIN INNER TABS -->
+    <div style="display:flex;gap:0.4rem;margin-bottom:1.25rem;">
+      <button id="adminInnerTabDashboard" onclick="switchAdminTab('dashboard')" style="padding:0.3rem 0.85rem;border:1px solid #1c2b3a;border-radius:6px;background:#1c2b3a;color:white;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Dashboard</button>
+      <button id="adminInnerTabAgentHub" onclick="switchAdminTab('agentHub')" style="padding:0.3rem 0.85rem;border:1px solid var(--border);border-radius:6px;background:white;color:var(--muted);font-size:0.82rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">🤖 Agent Hub</button>
+    </div>
+    <div id="adminPanelDashboard">
+
     <!-- ANALYTICS SECTION -->
     <div class="admin-section" style="margin-bottom:1.75rem;">
       <div class="admin-section-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
@@ -742,6 +749,54 @@
         <div id="inviteResult" style="margin-top:0.75rem;font-size:0.82rem;"></div>
       </div>
     </div>
+
+    </div><!-- /adminPanelDashboard -->
+
+    <!-- AGENT HUB PANEL -->
+    <div id="adminPanelAgentHub" style="display:none">
+
+      <!-- Agent Cards -->
+      <div class="admin-section">
+        <div class="admin-section-head">🤖 Agents</div>
+        <div class="admin-table-wrap" style="padding:1.25rem;">
+          <div id="agentCardsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0.75rem;">
+            <div style="color:var(--muted);font-size:0.85rem;padding:0.5rem;">Loading agents...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Findings Feed -->
+      <div class="admin-section">
+        <div class="admin-section-head">📋 Findings Feed</div>
+        <div class="admin-table-wrap">
+          <!-- Filter bar -->
+          <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border);display:flex;gap:0.65rem;align-items:center;flex-wrap:wrap;">
+            <select id="filterAgent" onchange="filterFindings()" style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;background:white;">
+              <option value="">All agents</option>
+            </select>
+            <select id="filterSeverity" onchange="filterFindings()" style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;background:white;">
+              <option value="">All severities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="info">Info</option>
+            </select>
+            <select id="filterStatus" onchange="filterFindings()" style="padding:0.5rem 0.75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;background:white;">
+              <option value="">All statuses</option>
+              <option value="new">New</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="ignored">Ignored</option>
+            </select>
+          </div>
+          <!-- Findings content -->
+          <div id="findingsFeed">
+            <div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:0.85rem;">Click Agent Hub to load findings</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /adminPanelAgentHub -->
 
   </div><!-- /sectionAdmin -->
 
