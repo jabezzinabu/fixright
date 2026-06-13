@@ -791,6 +791,7 @@
 <script src="js/estimate.js"></script>
 <script src="js/visualize.js"></script>
 <script src="js/discover.js"></script>
+<script src="js/admin.js"></script>
 <script>
 // ─── CONFIG — replace these with your Supabase credentials ───────────────────
 const SUPABASE_URL = 'https://zciyiltkaunbozoedfcr.supabase.co';
@@ -1080,16 +1081,7 @@ function switchTab(tab) {
       if (fn) fn.style.display = 'none';
     }
   }
-  if (tab === 'admin') {
-    if (!window._adminLoaded) {
-      const s = document.createElement('script');
-      s.src = 'js/admin.js';
-      s.onload = () => loadAdminData();
-      document.head.appendChild(s);
-    } else {
-      loadAdminData();
-    }
-  }
+  if (tab === 'admin') { loadAdminData(); }
   if (tab === 'discover') { showCategoryView(); renderDiscoverCategories(); }
 }
 
