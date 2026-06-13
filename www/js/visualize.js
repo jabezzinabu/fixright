@@ -7,7 +7,7 @@ async function loadVizCredits() {
     const { data } = await db.from('profiles').select('viz_credits').eq('id', currentUser.id).single();
     _vizCredits = data?.viz_credits ?? 0;
     return _vizCredits;
-  } catch(e) { return 0; }
+  } catch(e) { showToast('Could not load credits — please refresh'); return 0; }
 }
 
 async function checkVizCredits() {
@@ -21,7 +21,7 @@ async function deductVizCredit() {
   _vizCredits = Math.max(0, _vizCredits - 1);
   try {
     await db.from('profiles').update({ viz_credits: _vizCredits }).eq('id', currentUser.id);
-  } catch(e) { /* silent */ }
+  } catch(e) { showToast('Could not update credits — please refresh'); }
 }
 
 async function addVizCredits(amount) {
@@ -36,7 +36,7 @@ async function addVizCredits(amount) {
     const { data } = await db.from('profiles').select('viz_credits_total').eq('id', currentUser.id).single();
     const newTotal = (data?.viz_credits_total || 0) + amount;
     await db.from('profiles').update({ viz_credits: _vizCredits, viz_credits_total: newTotal }).eq('id', currentUser.id);
-  } catch(e) { /* silent */ }
+  } catch(e) { showToast('Credits may not have updated — please refresh'); }
 }
 
 // Backward compat shims
@@ -247,7 +247,7 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     // Show upgrade prompt after success (skip for pro/admin)
     if (!isPro()) {
       const delay = (parseInt(localStorage.getItem('flag_upgradeDelay') || '4')) * 1000;
-      setTimeout(() => showUpgradeModal(), delay);
+      setTimeout(async () => { await loadVizCredits(); if (_vizCredits === 0) showUpgradeModal(); }, delay);
     }
 
   } catch(e) {
