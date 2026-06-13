@@ -1,14 +1,10 @@
 // ─── PHOTO HANDLING ───────────────────────────────────────────────────────────
 function updateSubmitButton() {
-  console.log('updateSubmitButton called');
   const btn = document.getElementById('submitBtn');
   if (!btn) return;
-  console.log('updateSubmitButton:', { hasImage: !!imageBase64, _vizCredits, vizCreditsDefined: typeof _vizCredits !== 'undefined' });
   if (imageBase64 && typeof _vizCredits !== 'undefined' && _vizCredits > 0) {
-    console.log('updateSubmitButton: taking viz branch');
     btn.textContent = '✨ Get Estimate & Visualization';
   } else {
-    console.log('updateSubmitButton: taking default branch');
     btn.textContent = '🔧 Get My Estimate';
   }
 }
