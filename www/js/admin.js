@@ -1,4 +1,3 @@
-if (!isAdmin()) return;
 window._adminLoaded = true;
 
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
