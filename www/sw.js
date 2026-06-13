@@ -1,8 +1,23 @@
-const CACHE = 'fixright-v1';
+const CACHE = 'fixright-v2';
 const STATIC = [
   '/',
   '/index.html',
   '/legal.html',
+  '/css/base.css',
+  '/css/components.css',
+  '/css/sections.css',
+  '/js/config.js',
+  '/js/ui.js',
+  '/js/auth.js',
+  '/js/measurement.js',
+  '/js/measurement-data.js',
+  '/js/retailer-data.js',
+  '/js/estimate.js',
+  '/js/share.js',
+  '/js/visualize.js',
+  '/js/discover.js',
+  '/js/admin.js',
+  '/js/pwa.js',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'
 ];
