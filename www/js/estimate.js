@@ -672,3 +672,70 @@ function clearResults(e) {
   if (banner) banner.classList.remove('visible');
   currentEstimate = null;
 }
+
+// ─── DEMO HERO CARD + SAMPLE ESTIMATE MODAL ────────────────────────────────
+
+let _demoEstimateData = null;
+let _resultsOriginalParent = null;
+let _resultsOriginalNextSibling = null;
+
+async function initDemoHeroCard() {
+  const card = document.getElementById('demoHeroCard');
+  if (!card) return;
+
+  const closeBtn = document.getElementById('sampleEstimateClose');
+  const tryBtn = document.getElementById('sampleEstimateTryBtn');
+  const overlay = document.getElementById('sampleEstimateModal');
+  if (closeBtn) closeBtn.addEventListener('click', closeSampleEstimateModal);
+  if (tryBtn) tryBtn.addEventListener('click', closeSampleEstimateModal);
+  if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSampleEstimateModal(); });
+
+  let tries = 0;
+  while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
+  if (!dbReady) return;
+
+  try {
+    const { data, error } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
+    if (error || !data?.data) return;
+    const est = data.data;
+    if (!est.beforeImage || !est.vizImage) return;
+    _demoEstimateData = { ...est, isDemo: true };
+    document.getElementById('demoBeforeImg').src = est.beforeImage;
+    document.getElementById('demoAfterImg').src = est.vizImage;
+    card.style.display = 'block';
+    document.getElementById('demoHeroBtn').addEventListener('click', openSampleEstimateModal);
+  } catch(e) { /* card stays hidden */ }
+}
+
+function openSampleEstimateModal() {
+  if (!_demoEstimateData) return;
+  const modal = document.getElementById('sampleEstimateModal');
+  const inner = document.getElementById('sampleEstimateInner');
+  const results = document.getElementById('results');
+  _resultsOriginalParent = results.parentNode;
+  _resultsOriginalNextSibling = results.nextElementSibling;
+  inner.appendChild(results);
+  currentEstimate = _demoEstimateData;
+  renderResults(_demoEstimateData);
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => { inner.scrollTop = 0; }, 150);
+}
+
+function closeSampleEstimateModal() {
+  const modal = document.getElementById('sampleEstimateModal');
+  if (!modal.classList.contains('open')) return;
+  const results = document.getElementById('results');
+  if (_resultsOriginalParent) {
+    if (_resultsOriginalNextSibling) {
+      _resultsOriginalParent.insertBefore(results, _resultsOriginalNextSibling);
+    } else {
+      _resultsOriginalParent.appendChild(results);
+    }
+    _resultsOriginalParent = null;
+    _resultsOriginalNextSibling = null;
+  }
+  results.classList.remove('visible');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
