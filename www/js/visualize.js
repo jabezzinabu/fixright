@@ -193,7 +193,7 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 300,
           messages: [{ role: 'user', content: msgContent }]
         })
@@ -478,7 +478,7 @@ Only list what you can clearly see was added or changed. Do not guess.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 400,
           messages: [{
             role: 'user',
@@ -842,7 +842,7 @@ async function generateCombinedViz() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 250,
           messages: [{
             role: 'user',
@@ -964,7 +964,7 @@ async function confirmVizAndEstimate() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 200,
           messages: [{
             role: 'user',
@@ -997,7 +997,7 @@ Be concise — 3-4 lines max. Return only the measurements, no explanation.` }
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-6',
             max_tokens: 300,
             messages: [{
               role: 'user',
