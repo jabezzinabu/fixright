@@ -703,7 +703,7 @@ async function initDemoHeroCard() {
     document.getElementById('demoBeforeImg').src = est.beforeImage;
     document.getElementById('demoAfterImg').src = est.vizImage;
     card.style.display = 'block';
-    document.getElementById('demoHeroBtn').addEventListener('click', openSampleEstimateModal);
+    document.getElementById('demoHeroBtn').addEventListener('click', () => { trackEvent('see_sample_click'); openSampleEstimateModal(); });
   } catch(e) { /* card stays hidden */ }
 }
 

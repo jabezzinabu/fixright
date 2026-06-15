@@ -431,6 +431,7 @@ async function loadAnalytics() {
       .gte('date', _analyticsFrom)
       .lte('date', _analyticsTo)
       .order('date', { ascending: true });
+    console.log('[Analytics] usage_stats raw:', data, 'error:', error, 'from:', _analyticsFrom, 'to:', _analyticsTo);
     if (error) throw error;
     _analyticsData = data || [];
 

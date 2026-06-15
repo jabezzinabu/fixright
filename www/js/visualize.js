@@ -777,6 +777,7 @@ async function runCombinedEstimate() {
   const desc = document.getElementById('description').value.trim();
   if (!desc && !imageBase64) { showToast('Please add a photo or description'); return; }
   if (!checkEstPaywall()) return;
+  trackEvent('get_estimate_click');
 
   // Show loading state immediately
   const submitBtn = document.getElementById('submitBtn');
@@ -1087,3 +1088,4 @@ function checkStripeRedirect() {
     showToast('Checkout cancelled — no charge made');
   }
 }
+

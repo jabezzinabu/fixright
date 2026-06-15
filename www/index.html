@@ -181,8 +181,8 @@
         </div>
       </div>
 
-      <div style="text-align:center">
-        <button class="btn-estimate" id="submitBtn" onclick="runCombinedEstimate()">
+      <div style="text-align:center;margin-top:1rem;">
+        <button class="btn-estimate" id="submitBtn">
           🔧 Generate DIY Estimate
         </button>
       </div>
@@ -901,6 +901,8 @@ window.addEventListener('load', () => {
   initSupabase();
   checkSession();
   initDemoHeroCard();
+  const _submitBtn = document.getElementById('submitBtn');
+  if (_submitBtn) _submitBtn.addEventListener('click', () => (typeof runCombinedEstimate === 'function' ? runCombinedEstimate() : runEstimate()));
 
   if (window._isRecoveryFlow) {
     setTimeout(() => {
