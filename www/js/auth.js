@@ -62,6 +62,9 @@ async function checkUserRole(user) {
       if (error || !data) {
         // No profile row — create one
         await db.from('profiles').upsert({ id: user.id, email: user.email, role: 'free' });
+        if (user.app_metadata?.provider === 'google') {
+          trackEvent('sign_up', { method: 'google' });
+        }
         return;
       }
       if (data?.role === 'admin') { grantSuperAdmin(); return; }
@@ -157,6 +160,7 @@ async function submitAuth() {
       showAuthSuccess('✓ Account created! Check your email to confirm before signing in.');
       showToast('📧 Confirmation email sent — check your inbox!');
       trackEvent('signups_count');
+      trackEvent('sign_up', { method: 'email' });
       // Grant 3 free viz credits
       if (result.data.user) {
         await db.from('profiles').upsert({ id: result.data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
@@ -165,6 +169,7 @@ async function submitAuth() {
       closeAuthModal();
       showToast('✓ Welcome! You have 3 free visualizations.');
       trackEvent('signups_count');
+      trackEvent('sign_up', { method: 'email' });
       if (result.data.user) {
         await db.from('profiles').upsert({ id: result.data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
         _vizCredits = 3;
@@ -474,6 +479,7 @@ async function submitPopupSignup() {
     if (data.user) {
       await db.from('profiles').upsert({ id: data.user.id, email, role: 'free', viz_credits: 3, viz_credits_total: 3 }, { onConflict: 'id' });
       trackEvent('signups_count');
+      trackEvent('sign_up', { method: 'email' });
     }
 
     window._pendingAuthAfterPopup = false;

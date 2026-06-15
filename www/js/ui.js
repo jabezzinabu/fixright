@@ -90,7 +90,7 @@ function toggleSection(id) {
   if (arrow) arrow.classList.toggle('open');
 }
 
-async function trackEvent(eventType) {
+async function trackEvent(eventType, params) {
   if (currentUser?.role === 'admin' || currentUser?.email === 'jabezzinabu@gmail.com') return;
   let tries = 0;
   while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
@@ -109,4 +109,7 @@ async function trackEvent(eventType) {
       }
     }
   } catch(e) { console.warn('trackEvent failed:', eventType, e.message); }
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', eventType, params || {});
+  }
 }

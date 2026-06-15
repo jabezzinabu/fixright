@@ -508,24 +508,35 @@ function renderAnalyticsChart(data) {
 
   const chartHeight = 100;
   const barW = Math.max(3, Math.floor((container.clientWidth || 300) / (data.length * 5 + data.length + 4)));
+  const rotateLabels = data.length > 7;
 
-  container.innerHTML = data.map((r, i) => {
+  const fmtDate = (d) => {
+    const [,m,day] = d.split('-');
+    return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1] + ' ' + +day;
+  };
+
+  container.innerHTML = data.map((r) => {
     const eH  = Math.round((r.estimates_count || 0) / maxVal * chartHeight);
     const vH  = Math.round((r.visualizations_count || 0) / maxVal * chartHeight);
     const sH  = Math.round((r.signups_count || 0) / maxVal * chartHeight);
     const smH = Math.round((sampleByDate[r.date] || 0) / maxVal * chartHeight);
     const ecH = Math.round((clickByDate[r.date]  || 0) / maxVal * chartHeight);
-    const showLabel = data.length <= 7 || i % Math.ceil(data.length / 7) === 0;
-    const dateLabel = showLabel ? r.date.slice(5) : '';
+    const dayTotal = (r.estimates_count||0) + (r.visualizations_count||0) + (r.signups_count||0) + (sampleByDate[r.date]||0) + (clickByDate[r.date]||0);
+    const tallestH = Math.max(eH, vH, sH, smH, ecH);
+    const labelTop = Math.max(0, chartHeight - tallestH - 14);
+    const labelCss = rotateLabels
+      ? `font-size:0.55rem;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:top center;margin-top:3px;font-family:'DM Sans',sans-serif;`
+      : `font-size:0.58rem;color:var(--muted);white-space:nowrap;font-family:'DM Sans',sans-serif;`;
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;min-width:0;">
-      <div style="display:flex;align-items:flex-end;gap:1px;height:${chartHeight}px;">
+      <div style="position:relative;display:flex;align-items:flex-end;gap:1px;height:${chartHeight}px;">
+        ${dayTotal > 0 ? `<div style="position:absolute;top:${labelTop}px;left:0;right:0;text-align:center;font-size:0.55rem;font-weight:600;color:#1c2b3a;font-family:'DM Sans',sans-serif;">${dayTotal}</div>` : ''}
         <div title="Estimates: ${r.estimates_count||0}" style="width:${barW}px;height:${eH}px;background:#1c2b3a;border-radius:2px 2px 0 0;min-height:${eH>0?2:0}px;"></div>
         <div title="Visualizations: ${r.visualizations_count||0}" style="width:${barW}px;height:${vH}px;background:var(--sage);border-radius:2px 2px 0 0;min-height:${vH>0?2:0}px;"></div>
         <div title="Signups: ${r.signups_count||0}" style="width:${barW}px;height:${sH}px;background:var(--rust);border-radius:2px 2px 0 0;min-height:${sH>0?2:0}px;"></div>
         <div title="Sample Views: ${sampleByDate[r.date]||0}" style="width:${barW}px;height:${smH}px;background:#7c3aed;border-radius:2px 2px 0 0;min-height:${smH>0?2:0}px;"></div>
         <div title="Estimate Clicks: ${clickByDate[r.date]||0}" style="width:${barW}px;height:${ecH}px;background:#0891b2;border-radius:2px 2px 0 0;min-height:${ecH>0?2:0}px;"></div>
       </div>
-      ${dateLabel ? `<div style="font-size:0.58rem;color:var(--muted);white-space:nowrap;">${dateLabel}</div>` : '<div style="height:12px;"></div>'}
+      <div style="${labelCss}">${fmtDate(r.date)}</div>
     </div>`;
   }).join('');
 }

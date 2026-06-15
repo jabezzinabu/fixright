@@ -240,6 +240,7 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     incVizCount();
     setVizLoading(false);
     document.getElementById('vizResult').classList.add('visible');
+    trackEvent('viz_complete');
     document.getElementById('vizResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
     showToast('✨ Visualization complete!');
     setTimeout(showInstallBanner, 3000);
@@ -292,10 +293,12 @@ function shareViz() {
 function showUpgradeModal() {
   if (!currentUser) { showAuthModal(); return; }
   document.getElementById('upgradeModal').classList.add('open');
+  trackEvent('upgrade_click');
 }
 function showVizPackageModal() {
   if (!currentUser) { showSignupPopup(); return; }
   document.getElementById('upgradeModal').classList.add('open');
+  trackEvent('upgrade_click');
 }
 function closeUpgradeModal() {
   document.getElementById('upgradeModal').classList.remove('open');

@@ -129,6 +129,7 @@ Be accurate, specific, practical. Return ONLY the JSON.`;
     const parsed = JSON.parse(clean);
     currentEstimate = { ...parsed, region, approach, ts: Date.now(), desc, user_id: currentUser?.id || USER_ID };
     renderResults(currentEstimate);
+    trackEvent('estimate_complete', { project_type: currentEstimate?.projectType || 'unknown' });
     hideSavePrompt();
     // Track anonymous usage
     trackAnonymousEstimate();
