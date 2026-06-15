@@ -402,26 +402,45 @@ function generateTempPassword() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 let _analyticsPeriod = 'today';
-let _analyticsData = [];
+let _analyticsData   = [];
+let _analyticsEvents = [];
+let _analyticsFrom   = new Date().toISOString().split('T')[0];
+let _analyticsTo     = new Date().toISOString().split('T')[0];
 
 function setAnalyticsPeriod(period) {
   _analyticsPeriod = period;
-  // Update active button
-  ['today','7d','30d','all'].forEach(p => {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  _analyticsTo = today;
+  if (period === 'today')  _analyticsFrom = today;
+  else if (period === '7d')  _analyticsFrom = new Date(now - 7  * 86400000).toISOString().split('T')[0];
+  else if (period === '30d') _analyticsFrom = new Date(now - 30 * 86400000).toISOString().split('T')[0];
+  else if (period === '90d') _analyticsFrom = new Date(now - 90 * 86400000).toISOString().split('T')[0];
+  ['today','7d','30d','90d'].forEach(p => {
     const btn = document.getElementById('period' + p.charAt(0).toUpperCase() + p.slice(1));
     if (btn) btn.classList.toggle('active', p === period);
   });
-  renderAnalytics();
+  loadAnalytics();
 }
 
 async function loadAnalytics() {
   if (!dbReady) return;
   try {
-    // Load all usage_stats
-    const { data } = await db.from('usage_stats')
+    const { data, error } = await db.from('usage_stats')
       .select('date, estimates_count, signups_count, visualizations_count, paid_conversions, visitors_count')
+      .gte('date', _analyticsFrom)
+      .lte('date', _analyticsTo)
       .order('date', { ascending: true });
+    if (error) throw error;
     _analyticsData = data || [];
+
+    const { data: evtData } = await db.from('usage_stats')
+      .select('event_type, created_at')
+      .in('event_type', ['see_sample_click', 'get_estimate_click'])
+      .gte('created_at', _analyticsFrom + 'T00:00:00.000Z')
+      .lte('created_at', _analyticsTo   + 'T23:59:59.999Z');
+    _analyticsEvents = evtData || [];
+
     renderAnalytics();
   } catch(e) {
     console.error('Analytics load error:', e);
@@ -429,50 +448,40 @@ async function loadAnalytics() {
 }
 
 function renderAnalytics() {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-
-  let filtered = [];
   let periodLabel = '';
+  if (_analyticsPeriod === 'today')    periodLabel = 'today';
+  else if (_analyticsPeriod === '7d')  periodLabel = 'last 7 days';
+  else if (_analyticsPeriod === '30d') periodLabel = 'last 30 days';
+  else if (_analyticsPeriod === '90d') periodLabel = 'last 90 days';
+  else if (_analyticsPeriod === 'custom') periodLabel = _analyticsFrom + ' – ' + _analyticsTo;
 
-  if (_analyticsPeriod === 'today') {
-    filtered = _analyticsData.filter(r => r.date === today);
-    periodLabel = 'today';
-  } else if (_analyticsPeriod === '7d') {
-    const cutoff = new Date(now - 7 * 86400000).toISOString().split('T')[0];
-    filtered = _analyticsData.filter(r => r.date >= cutoff);
-    periodLabel = 'last 7 days';
-  } else if (_analyticsPeriod === '30d') {
-    const cutoff = new Date(now - 30 * 86400000).toISOString().split('T')[0];
-    filtered = _analyticsData.filter(r => r.date >= cutoff);
-    periodLabel = 'last 30 days';
-  } else {
-    filtered = _analyticsData;
-    periodLabel = 'all time';
-  }
-
-  // Sum totals
-  const totals = filtered.reduce((acc, r) => ({
+  const totals = _analyticsData.reduce((acc, r) => ({
     estimates: acc.estimates + (r.estimates_count || 0),
-    signups: acc.signups + (r.signups_count || 0),
-    viz: acc.viz + (r.visualizations_count || 0),
-    paid: acc.paid + (r.paid_conversions || 0),
-    visitors: acc.visitors + (r.visitors_count || 0),
+    signups:   acc.signups   + (r.signups_count   || 0),
+    viz:       acc.viz       + (r.visualizations_count || 0),
+    paid:      acc.paid      + (r.paid_conversions || 0),
+    visitors:  acc.visitors  + (r.visitors_count  || 0),
   }), { estimates: 0, signups: 0, viz: 0, paid: 0, visitors: 0 });
 
-  // Update stat cards
-  document.getElementById('aStatVisitors').textContent = totals.visitors;
-  document.getElementById('aStatSignups').textContent = totals.signups;
-  document.getElementById('aStatEstimates').textContent = totals.estimates;
-  document.getElementById('aStatViz').textContent = totals.viz;
-  document.getElementById('aStatPaid').textContent = totals.paid;
-  ['aStatVisitorsSub','aStatSignupsSub','aStatEstimatesSub','aStatVizSub','aStatPaidSub'].forEach(id => {
+  const sampleViews    = _analyticsEvents.filter(e => e.event_type === 'see_sample_click').length;
+  const estimateClicks = _analyticsEvents.filter(e => e.event_type === 'get_estimate_click').length;
+
+  const setCard = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setCard('aStatVisitors',       totals.visitors);
+  setCard('aStatSignups',        totals.signups);
+  setCard('aStatEstimates',      totals.estimates);
+  setCard('aStatViz',            totals.viz);
+  setCard('aStatPaid',           totals.paid);
+  setCard('aStatSampleViews',    sampleViews);
+  setCard('aStatEstimateClicks', estimateClicks);
+
+  ['aStatVisitorsSub','aStatSignupsSub','aStatEstimatesSub','aStatVizSub','aStatPaidSub',
+   'aStatSampleViewsSub','aStatEstimateClicksSub'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = periodLabel;
   });
 
-  // Render chart
-  renderAnalyticsChart(filtered);
+  renderAnalyticsChart(_analyticsData);
 }
 
 function renderAnalyticsChart(data) {
@@ -484,29 +493,54 @@ function renderAnalyticsChart(data) {
     return;
   }
 
-  // For 'today' show hourly feel — just the one bar
-  // For multi-day show each day as grouped bars
+  const sampleByDate = {}, clickByDate = {};
+  _analyticsEvents.forEach(e => {
+    const d = (e.created_at || '').split('T')[0];
+    if (e.event_type === 'see_sample_click')   sampleByDate[d] = (sampleByDate[d] || 0) + 1;
+    if (e.event_type === 'get_estimate_click') clickByDate[d]  = (clickByDate[d]  || 0) + 1;
+  });
+
   const maxVal = Math.max(...data.map(r => Math.max(
-    r.estimates_count || 0, r.visualizations_count || 0, r.signups_count || 0
+    r.estimates_count || 0, r.visualizations_count || 0, r.signups_count || 0,
+    sampleByDate[r.date] || 0, clickByDate[r.date] || 0
   )), 1);
 
   const chartHeight = 100;
-  const barGroupWidth = Math.max(4, Math.floor((container.clientWidth || 300) / (data.length * 3 + data.length)));
+  const barW = Math.max(3, Math.floor((container.clientWidth || 300) / (data.length * 5 + data.length + 4)));
 
-  container.innerHTML = data.map(r => {
-    const eH = Math.round((r.estimates_count || 0) / maxVal * chartHeight);
-    const vH = Math.round((r.visualizations_count || 0) / maxVal * chartHeight);
-    const sH = Math.round((r.signups_count || 0) / maxVal * chartHeight);
-    const dateLabel = data.length <= 7 ? r.date.slice(5) : (data.indexOf(r) % Math.ceil(data.length/7) === 0 ? r.date.slice(5) : '');
+  container.innerHTML = data.map((r, i) => {
+    const eH  = Math.round((r.estimates_count || 0) / maxVal * chartHeight);
+    const vH  = Math.round((r.visualizations_count || 0) / maxVal * chartHeight);
+    const sH  = Math.round((r.signups_count || 0) / maxVal * chartHeight);
+    const smH = Math.round((sampleByDate[r.date] || 0) / maxVal * chartHeight);
+    const ecH = Math.round((clickByDate[r.date]  || 0) / maxVal * chartHeight);
+    const showLabel = data.length <= 7 || i % Math.ceil(data.length / 7) === 0;
+    const dateLabel = showLabel ? r.date.slice(5) : '';
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;min-width:0;">
       <div style="display:flex;align-items:flex-end;gap:1px;height:${chartHeight}px;">
-        <div title="Estimates: ${r.estimates_count||0}" style="width:${barGroupWidth}px;height:${eH}px;background:#1c2b3a;border-radius:2px 2px 0 0;min-height:${eH>0?2:0}px;"></div>
-        <div title="Visualizations: ${r.visualizations_count||0}" style="width:${barGroupWidth}px;height:${vH}px;background:var(--sage);border-radius:2px 2px 0 0;min-height:${vH>0?2:0}px;"></div>
-        <div title="Signups: ${r.signups_count||0}" style="width:${barGroupWidth}px;height:${sH}px;background:var(--rust);border-radius:2px 2px 0 0;min-height:${sH>0?2:0}px;"></div>
+        <div title="Estimates: ${r.estimates_count||0}" style="width:${barW}px;height:${eH}px;background:#1c2b3a;border-radius:2px 2px 0 0;min-height:${eH>0?2:0}px;"></div>
+        <div title="Visualizations: ${r.visualizations_count||0}" style="width:${barW}px;height:${vH}px;background:var(--sage);border-radius:2px 2px 0 0;min-height:${vH>0?2:0}px;"></div>
+        <div title="Signups: ${r.signups_count||0}" style="width:${barW}px;height:${sH}px;background:var(--rust);border-radius:2px 2px 0 0;min-height:${sH>0?2:0}px;"></div>
+        <div title="Sample Views: ${sampleByDate[r.date]||0}" style="width:${barW}px;height:${smH}px;background:#7c3aed;border-radius:2px 2px 0 0;min-height:${smH>0?2:0}px;"></div>
+        <div title="Estimate Clicks: ${clickByDate[r.date]||0}" style="width:${barW}px;height:${ecH}px;background:#0891b2;border-radius:2px 2px 0 0;min-height:${ecH>0?2:0}px;"></div>
       </div>
       ${dateLabel ? `<div style="font-size:0.58rem;color:var(--muted);white-space:nowrap;">${dateLabel}</div>` : '<div style="height:12px;"></div>'}
     </div>`;
   }).join('');
+}
+
+function applyCustomDateRange() {
+  const from = document.getElementById('analyticsDateFrom').value;
+  const to   = document.getElementById('analyticsDateTo').value;
+  if (!from || !to || from > to) return;
+  _analyticsPeriod = 'custom';
+  _analyticsFrom   = from;
+  _analyticsTo     = to;
+  ['today','7d','30d','90d'].forEach(p => {
+    const btn = document.getElementById('period' + p.charAt(0).toUpperCase() + p.slice(1));
+    if (btn) btn.classList.remove('active');
+  });
+  loadAnalytics();
 }
 
 // ─── AGENT HUB ────────────────────────────────────────────────────────────────
