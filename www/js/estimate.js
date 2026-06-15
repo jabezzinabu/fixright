@@ -3,9 +3,9 @@ function updateSubmitButton() {
   const btn = document.getElementById('submitBtn');
   if (!btn) return;
   if (imageBase64 && typeof _vizCredits !== 'undefined' && _vizCredits > 0) {
-    btn.textContent = '✨ Get Estimate & Visualization';
+    btn.textContent = '✨ Generate DIY Estimate & Visualization';
   } else {
-    btn.textContent = '🔧 Get My Estimate';
+    btn.textContent = '🔧 Generate DIY Estimate';
   }
 }
 

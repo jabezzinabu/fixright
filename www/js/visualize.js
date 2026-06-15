@@ -749,7 +749,7 @@ function toggleVizMode() {
   const row = document.getElementById('vizToggleRow');
   const btn = document.getElementById('submitBtn');
   row.classList.toggle('active', vizModeEnabled);
-  btn.textContent = vizModeEnabled ? '✨ Get Estimate + Visualization' : '🔧 Get My Estimate';
+  btn.textContent = vizModeEnabled ? '✨ Generate DIY Estimate & Visualization' : '🔧 Generate DIY Estimate';
 }
 
 // ─── COMBINED VIZ RESULT ──────────────────────────────────────────────────────
