@@ -1021,38 +1021,38 @@ window.addEventListener('load', () => {
   <div class="modal">
     <div class="modal-header" style="background:linear-gradient(135deg,#E8481C,#ff6b3d);">
       <h3>✨ Get More Visualizations</h3>
-      <button class="modal-close" onclick="closeUpgradeModal()">✕</button>
+      <button class="modal-close" id="upgradeModalClose">✕</button>
     </div>
     <div class="modal-body" style="padding:1.25rem;">
       <p style="text-align:center;color:var(--muted);font-size:0.88rem;margin-bottom:1.25rem;">You've used all your free visualizations. Buy a package to keep seeing your projects come to life.</p>
       <div style="display:grid;gap:0.65rem;">
-        <button onclick="buyVizPackage(3)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+        <button data-viz-pkg="3" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div><div style="font-weight:700;color:#111;">3 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$1.33 each</div></div>
             <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$3.99</div>
           </div>
         </button>
-        <button onclick="buyVizPackage(5)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+        <button data-viz-pkg="5" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div><div style="font-weight:700;color:#111;">5 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$1.00 each</div></div>
             <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$4.99</div>
           </div>
         </button>
-        <button onclick="buyVizPackage(10)" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;position:relative;" >
+        <button data-viz-pkg="10" style="width:100%;background:#fff5f2;border:1.5px solid #fcd5c8;border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;position:relative;" >
           <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:#E8481C;color:white;font-size:0.65rem;font-weight:700;padding:2px 10px;border-radius:99px;">MOST POPULAR</div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div><div style="font-weight:700;color:#111;">10 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$0.90 each</div></div>
             <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$8.99</div>
           </div>
         </button>
-        <button onclick="buyVizPackage(25)" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
+        <button data-viz-pkg="25" style="width:100%;background:#f9fafb;border:1.5px solid var(--border);border-radius:12px;padding:0.9rem 1rem;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#E8481C'" onmouseout="this.style.borderColor='var(--border)'">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div><div style="font-weight:700;color:#111;">25 Visualizations</div><div style="font-size:0.78rem;color:var(--muted);">$0.60 each — best value</div></div>
             <div style="font-size:1.1rem;font-weight:800;color:#E8481C;">$14.99</div>
           </div>
         </button>
       </div>
-      <button onclick="closeUpgradeModal()" style="width:100%;background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.75rem 0 0;font-family:'DM Sans',sans-serif;">Maybe later</button>
+      <button id="upgradeModalLater" style="width:100%;background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.75rem 0 0;font-family:'DM Sans',sans-serif;">Maybe later</button>
     </div>
   </div>
 </div>

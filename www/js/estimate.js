@@ -62,6 +62,10 @@ zone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
   if (f && f.type.startsWith('image/')) handleFile(f);
 });
+zone.addEventListener('click', e => {
+  if (e.target.closest('button')) return;
+  document.getElementById('photoInput').click();
+});
 
 // ─── ESTIMATE ─────────────────────────────────────────────────────────────────
 async function runEstimate() {
@@ -268,14 +272,14 @@ function renderResults(est) {
         <div class="viz-teaser">
           <div class="viz-teaser-header" style="display:flex;align-items:center;justify-content:space-between;">
             <span>✨ See Your Project Transformed</span>
-            <button onclick="document.getElementById('vizTeaser').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;line-height:1;" title="Close">✕</button>
+            <button class="teaser-close-btn" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;line-height:1;" title="Close">✕</button>
           </div>
           <div class="viz-teaser-grid">
             <div class="viz-teaser-img-wrap">
               <img src="${photoSrc}" alt="Before">
               <div class="viz-teaser-label">📷 Your Space</div>
             </div>
-            <div class="viz-teaser-locked">
+            <div class="viz-teaser-locked" style="cursor:pointer;">
               <img src="${photoSrc}" alt="After preview">
               <div class="viz-teaser-locked-overlay">
                 <div class="lock-icon">🔒</div>
@@ -284,11 +288,14 @@ function renderResults(est) {
             </div>
           </div>
           <div class="viz-teaser-cta">
-            <button onclick="showVizPackageModal()">✨ Unlock Before &amp; After — from $3.99</button>
+            <button class="teaser-unlock-btn">✨ Unlock Before &amp; After — from $3.99</button>
             <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
           </div>
         </div>`;
       teaserEl.style.display = 'block';
+      teaserEl.querySelector('.teaser-close-btn').addEventListener('click', () => { teaserEl.style.display = 'none'; });
+      teaserEl.querySelector('.teaser-unlock-btn').addEventListener('click', showVizPackageModal);
+      teaserEl.querySelector('.viz-teaser-locked').addEventListener('click', showVizPackageModal);
     } else {
       teaserEl.style.display = 'none';
       teaserEl.innerHTML = '';

@@ -322,7 +322,7 @@ async function buyVizPackage(credits) {
   if (!priceId) { showToast('Invalid package'); return; }
 
   // Disable all package buttons and show loading
-  document.querySelectorAll('#upgradeModal button[onclick^="buyVizPackage"]').forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
+  document.querySelectorAll('#upgradeModal button[data-viz-pkg]').forEach(b => { b.disabled = true; b.style.opacity = '0.6'; });
   showToast('⏳ Opening checkout...');
   try {
     const resp = await fetch('/api/stripe-checkout', {
@@ -1068,6 +1068,15 @@ IMPORTANT: Use the area measurements above to calculate accurate material quanti
     actions.innerHTML = `<button onclick="confirmVizAndEstimate()" style="background:var(--rust);color:white;border:none;border-radius:7px;padding:0.5rem 1.1rem;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">↩ Try Again</button>`;
   }
 }
+
+// Wire upgrade modal buttons — safari-safe, no onclick= in HTML
+(function wireUpgradeModal() {
+  document.getElementById('upgradeModalClose').addEventListener('click', closeUpgradeModal);
+  document.getElementById('upgradeModalLater').addEventListener('click', closeUpgradeModal);
+  document.querySelectorAll('#upgradeModal button[data-viz-pkg]').forEach(btn => {
+    btn.addEventListener('click', () => buyVizPackage(parseInt(btn.dataset.vizPkg, 10)));
+  });
+})();
 
 function checkStripeRedirect() {
   const params = new URLSearchParams(window.location.search);
