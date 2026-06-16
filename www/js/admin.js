@@ -191,6 +191,7 @@ async function setDemoSlot(slot, estimateId) {
     await db.from('shared_estimates').upsert({ id: estimateId, data: demoPayload }, { onConflict: 'id' });
     await db.from('app_config').upsert({ key, value: estimateId }, { onConflict: 'key' });
     showToast('✅ Demo slot ' + slot + ' updated');
+    console.log('[Demo] Slot', slot, 'set to', estimateId, 'key:', key);
     loadDemoSlots();
     initDemoCarousel();
   } catch(e) { showToast('Error: ' + e.message); }

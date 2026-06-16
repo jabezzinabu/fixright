@@ -678,31 +678,63 @@ async function initDemoCarousel() {
 
   if (!dbReady) { setTimeout(initDemoCarousel, 300); return; }
   try {
-    const labelKeyMap = { 'demo_estimate_yard': 'demo_label_yard', 'demo_estimate_interior': 'demo_label_interior', 'demo_estimate_painting': 'demo_label_painting' };
-    const keys = [...DEMO_SLOTS.map(s => s.key), ...Object.values(labelKeyMap)];
-    const { data: configRows } = await db.from('app_config').select('key,value').in('key', keys);
-    if (!configRows || !configRows.length) return;
-    const idMap = {};
-    configRows.forEach(r => idMap[r.key] = r.value);
-    const ids = DEMO_SLOTS.map(s => idMap[s.key]).filter(Boolean);
-    if (!ids.length) return;
-    const { data: estimates } = await db.from('shared_estimates').select('id,data').in('id', ids);
-    if (!estimates || !estimates.length) return;
+    const keys = ['demo_estimate_yard', 'demo_estimate_interior', 'demo_estimate_painting'];
+    const labelKeys = ['demo_label_yard', 'demo_label_interior', 'demo_label_painting'];
+    const defaultLabels = ['🌿 Yard', '🛋️ Interior', '🎨 Painting'];
+    const { data: configRows, error: configErr } = await db.from('app_config')
+      .select('key,value').in('key', [...keys, ...labelKeys]);
+    if (configErr) { console.error('carousel config error:', configErr); showFallbackHeroCard(); return; }
+    const map = {};
+    (configRows || []).forEach(r => map[r.key] = r.value);
+    const ids = keys.map(k => map[k]).filter(Boolean);
+    if (!ids.length) { showFallbackHeroCard(); return; }
+    const { data: estimates, error: estErr } = await db.from('shared_estimates')
+      .select('id,data').in('id', ids);
+    if (estErr || !estimates || !estimates.length) { showFallbackHeroCard(); return; }
     const estMap = {};
     estimates.forEach(e => estMap[e.id] = e.data);
-    _carouselSlides = DEMO_SLOTS
-      .map(slot => {
-        const id = idMap[slot.key];
-        const est = id && estMap[id];
-        if (!est || !est.beforeImage || !est.vizImage) return null;
-        const label = idMap[labelKeyMap[slot.key]] || slot.label;
-        return { label, before: est.beforeImage, after: est.vizImage, data: est, id };
-      })
-      .filter(Boolean);
-    if (!_carouselSlides.length) return;
+    _carouselSlides = keys.map((k, i) => {
+      const id = map[k];
+      const est = id && estMap[id];
+      if (!est) return null;
+      const before = est.beforeImage || est.imageBase64 || null;
+      const after = est.vizImage || est.vizResultImageSrc || null;
+      if (!before || !after) return null;
+      return {
+        label: map[labelKeys[i]] || defaultLabels[i],
+        before, after, data: est, id
+      };
+    }).filter(Boolean);
+    if (!_carouselSlides.length) { showFallbackHeroCard(); return; }
     renderCarousel();
     document.getElementById('demoCarousel').style.display = 'block';
-  } catch(e) { console.error('initDemoCarousel:', e); }
+    document.getElementById('fallbackHeroCard').style.display = 'none';
+  } catch(e) {
+    console.error('initDemoCarousel error:', e);
+    showFallbackHeroCard();
+  }
+}
+
+async function showFallbackHeroCard() {
+  if (!dbReady) { setTimeout(showFallbackHeroCard, 300); return; }
+  try {
+    const { data } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
+    if (!data || !data.data) return;
+    const est = data.data;
+    const before = est.beforeImage || est.imageBase64;
+    const after = est.vizImage || est.vizResultImageSrc;
+    if (!before || !after) return;
+    document.getElementById('demoBeforeImg').src = before;
+    document.getElementById('demoAfterImg').src = after;
+    document.getElementById('fallbackHeroCard').style.display = 'block';
+    document.getElementById('demoCarousel').style.display = 'none';
+    const btn = document.getElementById('demoHeroBtn');
+    if (btn) btn.onclick = function() {
+      trackEvent('see_sample_click');
+      _demoEstimateData = est;
+      openSampleEstimateModal();
+    };
+  } catch(e) { console.error('fallback hero error:', e); }
 }
 
 function renderCarousel() {

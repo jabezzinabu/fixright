@@ -125,6 +125,23 @@
   <div class="form-card">
     <div class="form-body">
 
+      <!-- FALLBACK HERO CARD -->
+      <div id='fallbackHeroCard' style='display:none;'>
+        <div class='demo-hero-card' id='demoHeroCard'>
+          <div class='demo-hero-grid'>
+            <div class='demo-hero-img-wrap'>
+              <img id='demoBeforeImg' src='' alt='Before'>
+              <span class='demo-hero-label'>BEFORE</span>
+            </div>
+            <div class='demo-hero-img-wrap' style='position:relative;'>
+              <img id='demoAfterImg' src='' alt='After'>
+              <span class='demo-hero-label after'>AFTER</span>
+              <button id='demoHeroBtn' class='demo-hero-cta'>See Sample Estimate →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- DEMO CAROUSEL -->
       <div id='demoCarousel' style='display:none;'>
         <div class='carousel-track-wrap'>
@@ -1010,7 +1027,7 @@ window.addEventListener('load', () => {
 
   initSupabase();
   checkSession();
-  initDemoCarousel();
+  initDemoCarousel().catch(() => showFallbackHeroCard());
   document.getElementById('demoCarouselPrev').addEventListener('click', () => goCarousel(_carouselIndex - 1));
   document.getElementById('demoCarouselNext').addEventListener('click', () => goCarousel(_carouselIndex + 1));
   const _submitBtn = document.getElementById('submitBtn');
