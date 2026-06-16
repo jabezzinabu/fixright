@@ -290,17 +290,6 @@ function shareViz() {
 }
 
 // ─── UPGRADE MODAL ────────────────────────────────────────────────────────────
-function showUpgradeModal() {
-  if (!currentUser) { showAuthModal(); return; }
-  document.getElementById('upgradeModal').classList.add('open');
-  trackEvent('upgrade_click');
-}
-function showVizPackageModal() {
-  if (!currentUser) { showSignupPopup(); return; }
-  document.querySelectorAll('.modal-overlay.open, .modal.open').forEach(m => m.classList.remove('open'));
-  document.getElementById('upgradeModal').classList.add('open');
-  trackEvent('upgrade_click');
-}
 function closeUpgradeModal() {
   document.getElementById('upgradeModal').classList.remove('open');
 }
@@ -891,9 +880,9 @@ Rules:
       incVizCount();
       trackEvent('visualizations_count');
 
-      // Hide the teaser — user now has their viz
-      const teaserToHide = document.getElementById('vizTeaser');
-      if (teaserToHide) { teaserToHide.style.display = 'none'; teaserToHide.innerHTML = ''; }
+      // Hide the transform card — user now has their viz
+      const vtcCardToHide = document.getElementById('vizTransformCard');
+      if (vtcCardToHide) { vtcCardToHide.style.display = 'none'; }
 
       // Update credit display
       updateFreeNotice();

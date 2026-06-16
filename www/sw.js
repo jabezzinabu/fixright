@@ -1,6 +1,6 @@
 // IMPORTANT: Bump the CACHE version number every time any JS or CSS file is modified.
-// New files also need to be added to the STATIC array. Current version: v23.
-const CACHE = 'fixright-v23';
+// New files also need to be added to the STATIC array. Current version: v24.
+const CACHE = 'fixright-v24';
 const STATIC = [
   '/',
   '/index.html',

@@ -268,29 +268,18 @@
 
     <!-- RESULTS -->
     <div id="results">
-      <!-- VIZ TEASER — shown when user has photo but no viz credits -->
-      <div id="vizTeaser" style="display:none;">
-        <div class="viz-teaser">
-          <div class="viz-teaser-header">
-            <span>✨ See Your Project Transformed</span>
-            <button id="teaserCloseBtn">✕</button>
+      <!-- VIZ TRANSFORM CARD — shown when user has photo but no viz credits -->
+      <div id="vizTransformCard" style="display:none;">
+        <div class="vtc-inner">
+          <div class="vtc-left">
+            <img id="vtcPhoto" src="" alt="Your space">
           </div>
-          <div class="viz-teaser-grid">
-            <div class="viz-teaser-img-wrap">
-              <img id="teaserBeforeImg" src="" alt="Before">
-              <div class="viz-teaser-label">📷 Your Space</div>
-            </div>
-            <button id="teaserUnlockImg" class="viz-teaser-locked" onclick="showUpgradePage('estimate')">
-              <img id="teaserAfterImg" src="" alt="AI Visualization">
-              <div class="viz-teaser-locked-overlay">
-                <div class="lock-icon">🔒</div>
-                <div class="lock-text">AI Visualization<br>Unlocked with credits</div>
-              </div>
-            </button>
-          </div>
-          <div class="viz-teaser-cta">
-            <button id="teaserUnlockBtn" onclick="showUpgradePage('estimate')">✨ Unlock Before &amp; After — from $3.99</button>
-            <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
+          <div class="vtc-right">
+            <div class="vtc-eyebrow">✨ AI Visualization</div>
+            <div class="vtc-title">See what this could look like</div>
+            <div class="vtc-desc">Get an AI-generated before &amp; after of your exact space with this project completed.</div>
+            <button class="vtc-btn" onclick="switchTab('upgrade')">See My Transformation →</button>
+            <div class="vtc-note">From $3.99 · Credits never expire</div>
           </div>
         </div>
       </div>

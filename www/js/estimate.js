@@ -67,10 +67,6 @@ zone.addEventListener('click', e => {
   document.getElementById('photoInput').click();
 });
 
-document.getElementById('teaserCloseBtn').addEventListener('click', function() {
-  document.getElementById('vizTeaser').style.display = 'none';
-});
-
 // ─── ESTIMATE ─────────────────────────────────────────────────────────────────
 async function runEstimate() {
   const desc = document.getElementById('description').value.trim();
@@ -265,18 +261,17 @@ function renderResults(est) {
     }
   }
 
-  // Show viz teaser if user uploaded a photo but has no viz yet
-  const teaserEl = document.getElementById('vizTeaser');
-  if (teaserEl) {
+  // Show viz transform card if user uploaded a photo but has no viz yet
+  const vtcCard = document.getElementById('vizTransformCard');
+  if (vtcCard) {
     const hasPhoto = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
     const hasViz = est.vizImage || vizResultImageSrc;
     if (hasPhoto && !hasViz && !est.isDemo) {
       const photoSrc = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
-      document.getElementById('teaserBeforeImg').src = photoSrc;
-      document.getElementById('teaserAfterImg').src = photoSrc;
-      teaserEl.style.display = 'block';
+      document.getElementById('vtcPhoto').src = photoSrc;
+      vtcCard.style.display = 'block';
     } else {
-      teaserEl.style.display = 'none';
+      vtcCard.style.display = 'none';
     }
   }
 
