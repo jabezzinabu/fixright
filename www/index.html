@@ -1169,12 +1169,12 @@ window.addEventListener('load', () => {
   <div class="modal" style="max-width:600px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
     <div class="modal-header" style="background:linear-gradient(135deg,#E8481C,#ff6b3d);flex-shrink:0;">
       <h3>Sample Estimate</h3>
-      <button id="sampleEstimateClose" style="background:none;border:none;color:white;font-size:1.4rem;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:opacity 0.2s;opacity:0.85;" title="Close">✕</button>
+      <button id="sampleEstimateClose" onclick="closeSampleEstimateModal()" style="background:none;border:none;color:white;font-size:1.4rem;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:opacity 0.2s;opacity:0.85;" title="Close">✕</button>
     </div>
     <div id="sampleEstimateInner" style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;">
     </div>
     <div style="padding:1rem 1.35rem;border-top:1px solid var(--border);background:var(--paper);flex-shrink:0;">
-      <button id="sampleEstimateTryBtn" style="width:100%;background:#E8481C;color:#fff;border:none;border-radius:99px;padding:0.85rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Try It Yourself →</button>
+      <button id="sampleEstimateTryBtn" onclick="closeSampleEstimateModal()" style="width:100%;background:#E8481C;color:#fff;border:none;border-radius:99px;padding:0.85rem;font-size:1rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Try It Yourself →</button>
     </div>
   </div>
 </div>

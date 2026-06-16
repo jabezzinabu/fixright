@@ -677,7 +677,8 @@ async function showFallbackHeroCard() {
     document.getElementById('demoBeforeImg').src = before;
     document.getElementById('demoAfterImg').src = after;
     document.getElementById('fallbackHeroCard').style.display = 'block';
-    document.getElementById('demoCarousel').style.display = 'none';
+    const carouselEl = document.getElementById('demoCarousel');
+    if (carouselEl) carouselEl.style.display = 'none';
     const btn = document.getElementById('demoHeroBtn');
     if (btn) btn.onclick = function() {
       trackEvent('see_sample_click');
