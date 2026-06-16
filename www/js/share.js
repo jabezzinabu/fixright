@@ -2,6 +2,10 @@ let _currentShareUrl = '';
 
 async function shareEstimate() {
   if (!currentEstimate) return;
+  if (currentUser && dbReady && !currentEstimate._saved) {
+    await saveEstimate();
+    if (!currentEstimate._saved) { showToast('Please save your estimate before sharing'); return; }
+  }
   const payload = { ...currentEstimate };
   delete payload.user_id;
   if (vizResultImageSrc) payload.vizImage = vizResultImageSrc;

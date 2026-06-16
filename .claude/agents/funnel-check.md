@@ -44,6 +44,19 @@ Then trace each funnel path below. For every step, determine whether it works co
 
 ---
 
+## Funnel 4: Reddit ad → hero → See Sample → form → Generate DIY Estimate
+
+| Step | What to verify |
+|---|---|
+| 1. User lands from Reddit ad | Page loads, hero headline visible above fold on mobile without scrolling |
+| 2. User sees hero | CTA and value proposition are immediately clear; no signup wall before value |
+| 3. User clicks See Sample | Sample modal opens correctly, content renders, no silent failure |
+| 4. User closes modal | Modal closes cleanly, no state corruption, form is accessible |
+| 5. User fills form | Description input is accessible, placeholder is clear, no required fields block entry |
+| 6. User clicks Generate DIY Estimate | `runEstimate()` fires with `approach='diy'`, loading state shown, no auth wall |
+
+---
+
 ## Funnel 3: Return user → save estimate → share
 
 | Step | What to verify |

@@ -310,6 +310,7 @@ async function saveEstimate() {
       const { error } = await db.from('estimates').insert(row);
       if (error) throw error;
       showToast('✓ Saved!');
+      if (currentEstimate) currentEstimate._saved = true;
       loadSavedEstimates();
     } catch(e) {
       console.error('Save failed:', e?.message || e?.details || JSON.stringify(e));
@@ -318,6 +319,7 @@ async function saveEstimate() {
     }
   } else {
     saveLocal(currentEstimate);
+    if (currentEstimate) currentEstimate._saved = true;
     showToast('✓ Estimate saved!');
   }
 }
@@ -358,7 +360,7 @@ async function loadSavedEstimates() {
       renderSavedList();
     } catch(e) {
       console.error('Load failed:', e);
-      renderSavedList();
+      if (list) list.innerHTML = '<div class="drawer-empty">Could not load estimates — <button onclick="loadSavedEstimates()" style="background:none;border:none;color:#E8481C;cursor:pointer;font-weight:600;">tap to retry</button></div>';
     }
   } else {
     savedEstimates = JSON.parse(sessionStorage.getItem('fixright_saves') || '[]');
@@ -370,11 +372,14 @@ async function loadSavedEstimates() {
 async function deleteEstimate(id, e) {
   e.stopPropagation();
   if (dbReady) {
-    const { error } = await db.from('estimates').delete().eq('id', id);
-    if (!error) {
+    try {
+      const { error } = await db.from('estimates').delete().eq('id', id);
+      if (error) throw error;
       savedEstimates = savedEstimates.filter(x => x.id !== id);
       updateSavedCount(savedEstimates.length);
       renderSavedList();
+    } catch(e) {
+      showToast('Could not delete estimate — please try again');
     }
   } else {
     savedEstimates = savedEstimates.filter(x => x.id !== id);
