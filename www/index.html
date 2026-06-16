@@ -26,6 +26,18 @@
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <!-- Styles -->
+<link rel='preload' href='/css/base.css' as='style'>
+<link rel='preload' href='/css/components.css' as='style'>
+<link rel='preload' href='/css/sections.css' as='style'>
+<style>
+body { background: #faf9f7; font-family: 'DM Sans', sans-serif; margin: 0; }
+.page-section { display: none; }
+.page-section.active { display: block; }
+.container { max-width: 680px; margin: 0 auto; padding: 0 1rem; }
+header { background: white; border-bottom: 1px solid #e5e7eb; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.hero { text-align: center; padding: 2rem 1rem 1rem; }
+.hero h1 { font-size: 1.8rem; line-height: 1.2; color: #1c2b3a; margin: 0 0 0.75rem; }
+</style>
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/components.css">
 <link rel="stylesheet" href="css/sections.css">
@@ -105,7 +117,6 @@
     <p class="hero-eyebrow">🏠 AI-Powered · Free · Instant Results</p>
     <h1>Know exactly what your<br>DIY project will cost —<br><span style='color:#E8481C;font-size:1.1em;'>in 30 seconds</span></h1>
     <p>Get a full materials list with real Home Depot and Lowe's prices. Free. No signup needed.</p>
-    <p class='trust-line'>⭐ Trusted by 2,340+ homeowners in 14 countries</p>
   </div>
 
   <!-- FORM CARD -->
@@ -223,8 +234,8 @@
 
       <div class="testimonial-card">
         <div class="testimonial-stars">★★★★★</div>
-        <div class="testimonial-quote">"I was about to hire a contractor for $4,200. DIY Estimator showed me I could do it myself for $680."</div>
-        <div class="testimonial-author">— Marcus T., Texas</div>
+        <div class="testimonial-quote">"I was about to hire a contractor for $2,800. DIY Estimator showed me I could do it myself for $400."</div>
+        <div class="testimonial-author">— Becca Z., Kansas</div>
       </div>
       <div style="text-align:center;margin-top:1rem;">
         <p class="no-signup-note">✓ Free · No signup needed · Results in 30 seconds</p>
