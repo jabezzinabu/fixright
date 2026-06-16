@@ -147,7 +147,7 @@ async function runVisualize() {
   if (!currentUser) { showToast('Please sign in to use visualizations'); showAuthModal(); return; }
   // Check paywall — skip for admin/pro
   const freeUsed = await checkFreeVizUsed();
-  if (!isPro() && freeUsed) { showUpgradeModal(); return; }
+  if (!isPro() && freeUsed) { showUpgradePage('visualize'); return; }
 
   const desc = document.getElementById('vizDesc').value.trim();
 
@@ -248,7 +248,7 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     // Show upgrade prompt after success (skip for pro/admin)
     if (!isPro()) {
       const delay = (parseInt(localStorage.getItem('flag_upgradeDelay') || '4')) * 1000;
-      setTimeout(async () => { await loadVizCredits(); if (_vizCredits === 0) showUpgradeModal(); }, delay);
+      setTimeout(async () => { await loadVizCredits(); if (_vizCredits === 0) showUpgradePage('visualize'); }, delay);
     }
 
   } catch(e) {
@@ -268,7 +268,7 @@ function newViz() {
   clearVizPhoto(new Event('click'));
   document.getElementById('vizDesc').value = '';
   vizResultImageSrc = null;
-  if (getVizCount() >= 1) showUpgradeModal();
+  if (getVizCount() >= 1) showUpgradePage('visualize');
 }
 
 function downloadViz() {
@@ -366,7 +366,7 @@ async function buyVizPackage(credits) {
 })();
 
 // Legacy compat
-async function goUpgrade(plan) { showVizPackageModal(); }
+async function goUpgrade(plan) { showUpgradePage('estimate'); }
 
 async function getStripeConfig(key) {
   try {
@@ -615,7 +615,7 @@ async function reRender() {
 
   // Check paywall — re-renders count as new uses after free tier
   if (!currentUser) { showToast('Please sign in to use visualizations'); showAuthModal(); return; }
-  if (!isPro() && _freeVizUsed) { showUpgradeModal(); return; }
+  if (!isPro() && _freeVizUsed) { showUpgradePage('visualize'); return; }
 
   // Update main description and re-run
   document.getElementById('vizDesc').value = newDesc;
@@ -802,7 +802,7 @@ async function runCombinedEstimate() {
         if (!currentUser) {
           setTimeout(showSignupPopup, 1500);
         } else {
-          setTimeout(showVizPackageModal, 1500);
+          setTimeout(() => showUpgradePage('visualize'), 1500);
         }
       }, 1200);
     }

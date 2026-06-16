@@ -103,12 +103,21 @@
   <!-- HERO -->
   <div class="hero">
     <p class="hero-eyebrow">🏠 AI-Powered · Free · Instant Results</p>
-    <h1>Know exactly what your DIY project will cost — in 30 seconds</h1>
+    <h1>Know exactly what your DIY project will cost — in <span style="color:#E8481C;">30 seconds</span></h1>
     <p>Get a full materials list with real Home Depot and Lowe's prices. Free. No signup needed.</p>
-    <div class="social-proof-bar">
-      <span>⭐ 2,340+ estimates generated</span>
-      <span>🌍 Used in 14 countries</span>
-      <span>⚡ Average result in 28 seconds</span>
+    <div class="social-proof-cards">
+      <div class="social-proof-card">
+        <div class="spc-number">2,340+</div>
+        <div class="spc-label">Estimates Generated</div>
+      </div>
+      <div class="social-proof-card">
+        <div class="spc-number">14</div>
+        <div class="spc-label">Countries Worldwide</div>
+      </div>
+      <div class="social-proof-card">
+        <div class="spc-number">28s</div>
+        <div class="spc-label">Average Result</div>
+      </div>
     </div>
   </div>
 
@@ -132,25 +141,29 @@
       </div>
 
       <!-- DESCRIPTION -->
-      <div class="form-step-label"><span class="step-number">1</span> Describe your project</div>
-      <div class="field">
-        <label>Describe the project <span>(be as specific as you like)</span></label>
-        <textarea id="description" placeholder="e.g. Replace the tile floor in a 12×10 ft bathroom. The existing tile is cracked and needs full removal. I want large-format porcelain tiles..." oninput="onDescriptionInput(this.value)"></textarea>
+      <div class="form-step-card">
+        <div class="form-step-label"><span class="step-number">1</span> Describe your project</div>
+        <div class="field">
+          <label>Describe the project <span>(be as specific as you like)</span></label>
+          <textarea id="description" placeholder="e.g. Replace the tile floor in a 12×10 ft bathroom. The existing tile is cracked and needs full removal. I want large-format porcelain tiles..." oninput="onDescriptionInput(this.value)"></textarea>
+        </div>
       </div>
 
       <!-- PHOTO DROP -->
-      <div class="form-step-label"><span class="step-number">2</span> Add a photo <span class="step-optional">optional</span></div>
-      <div class="photo-zone" id="photoZone">
-        <input type="file" id="photoInput" accept="image/*" onchange="handleFile(this.files[0])">
-        <input type="file" id="photoInputCamera" accept="image/*" capture="environment" onchange="handleFile(this.files[0])" style="display:none">
-        <img class="photo-preview" id="photoPreview" alt="Preview">
-        <button class="photo-clear" id="photoClear" onclick="clearPhoto(event)">✕</button>
-        <div id="photoPlaceholder">
-          <div class="photo-icon">📷</div>
-          <div class="photo-label">Add a photo <span style="font-size:0.78rem;color:var(--muted);font-weight:400;">(optional — triggers AI visualization)</span></div>
-          <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;">
-            <button type="button" onclick="event.stopPropagation();document.getElementById('photoInputCamera').click()" style="background:#E8481C;color:white;border:none;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 Take Photo</button>
-            <button type="button" onclick="event.stopPropagation();document.getElementById('photoInput').click()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🖼 Browse</button>
+      <div class="form-step-card">
+        <div class="form-step-label"><span class="step-number">2</span> Add a photo <span class="step-optional">optional</span></div>
+        <div class="photo-zone" id="photoZone">
+          <input type="file" id="photoInput" accept="image/*" onchange="handleFile(this.files[0])">
+          <input type="file" id="photoInputCamera" accept="image/*" capture="environment" onchange="handleFile(this.files[0])" style="display:none">
+          <img class="photo-preview" id="photoPreview" alt="Preview">
+          <button class="photo-clear" id="photoClear" onclick="clearPhoto(event)">✕</button>
+          <div id="photoPlaceholder">
+            <div class="photo-icon">📷</div>
+            <div class="photo-label">Add a photo <span style="font-size:0.78rem;color:var(--muted);font-weight:400;">(optional — triggers AI visualization)</span></div>
+            <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap;">
+              <button type="button" onclick="event.stopPropagation();document.getElementById('photoInputCamera').click()" style="background:#E8481C;color:white;border:none;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">📷 Take Photo</button>
+              <button type="button" onclick="event.stopPropagation();document.getElementById('photoInput').click()" style="background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:99px;padding:0.4rem 1rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;">🖼 Browse</button>
+            </div>
           </div>
         </div>
       </div>
@@ -168,33 +181,36 @@
         <div class="dim-warning" id="dimWarning">⚠ Without dimensions, material quantities will be estimated — add measurements for accuracy.</div>
       </div>
 
-      <div class="form-step-label"><span class="step-number">3</span> Set your preferences</div>
-      <div class="row-2">
-        <div class="field">
-          <label>Region</label>
-          <select id="region">
-            <option value="us-national">United States (avg.)</option>
-            <option value="us-northeast">US Northeast</option>
-            <option value="us-southeast">US Southeast</option>
-            <option value="us-midwest">US Midwest</option>
-            <option value="us-southwest">US Southwest</option>
-            <option value="us-west">US West Coast</option>
-            <option value="uk">United Kingdom</option>
-            <option value="ca">Canada</option>
-            <option value="au">Australia</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Approach</label>
-          <select id="approach">
-            <option value="diy">DIY (doing it myself)</option>
-            <option value="hire">Hiring a contractor</option>
-            <option value="both">Show both</option>
-          </select>
+      <div class="form-step-card">
+        <div class="form-step-label"><span class="step-number">3</span> Set your preferences</div>
+        <div class="row-2">
+          <div class="field">
+            <label>Region</label>
+            <select id="region">
+              <option value="us-national">United States (avg.)</option>
+              <option value="us-northeast">US Northeast</option>
+              <option value="us-southeast">US Southeast</option>
+              <option value="us-midwest">US Midwest</option>
+              <option value="us-southwest">US Southwest</option>
+              <option value="us-west">US West Coast</option>
+              <option value="uk">United Kingdom</option>
+              <option value="ca">Canada</option>
+              <option value="au">Australia</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Approach</label>
+            <select id="approach">
+              <option value="diy">DIY (doing it myself)</option>
+              <option value="hire">Hiring a contractor</option>
+              <option value="both">Show both</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
         <div class="testimonial-quote">"I was about to hire a contractor for $4,200. DIY Estimator showed me I could do it myself for $680."</div>
         <div class="testimonial-author">— Marcus T., Texas</div>
       </div>
@@ -264,7 +280,7 @@
               <img id="teaserBeforeImg" src="" alt="Before">
               <div class="viz-teaser-label">📷 Your Space</div>
             </div>
-            <button id="teaserUnlockImg" class="viz-teaser-locked">
+            <button id="teaserUnlockImg" class="viz-teaser-locked" onclick="showUpgradePage('estimate')">
               <img id="teaserAfterImg" src="" alt="AI Visualization">
               <div class="viz-teaser-locked-overlay">
                 <div class="lock-icon">🔒</div>
@@ -273,7 +289,7 @@
             </button>
           </div>
           <div class="viz-teaser-cta">
-            <button id="teaserUnlockBtn">✨ Unlock Before &amp; After — from $3.99</button>
+            <button id="teaserUnlockBtn" onclick="showUpgradePage('estimate')">✨ Unlock Before &amp; After — from $3.99</button>
             <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
           </div>
         </div>
@@ -545,6 +561,41 @@
       <button class="btn-discover-cta" onclick="switchTab('visualize')">✨ Visualize My Space</button>
     </div>
   </div><!-- /sectionDiscover -->
+
+  <!-- UPGRADE SECTION -->
+  <div class="page-section" id="sectionUpgrade">
+    <div class="upgrade-page">
+      <button id="upgradeBackBtn" class="upgrade-back-btn" onclick="hideUpgradePage()">← Back</button>
+      <div class="upgrade-hero">
+        <div class="upgrade-icon">✨</div>
+        <h2>Unlock AI Visualizations</h2>
+        <p>See exactly what your space will look like after your DIY project — before you spend a dollar.</p>
+      </div>
+      <div class="upgrade-packages">
+        <button class="upgrade-pkg-btn" onclick="buyVizPackage(3)">
+          <div class="pkg-count">3 Credits</div>
+          <div class="pkg-price">$3.99</div>
+          <div class="pkg-note">Best for trying it out</div>
+        </button>
+        <button class="upgrade-pkg-btn" onclick="buyVizPackage(5)">
+          <div class="pkg-count">5 Credits</div>
+          <div class="pkg-price">$5.99</div>
+          <div class="pkg-note">Most popular</div>
+        </button>
+        <button class="upgrade-pkg-btn" onclick="buyVizPackage(10)">
+          <div class="pkg-count">10 Credits</div>
+          <div class="pkg-price">$9.99</div>
+          <div class="pkg-note">Best value</div>
+        </button>
+        <button class="upgrade-pkg-btn" onclick="buyVizPackage(25)">
+          <div class="pkg-count">25 Credits</div>
+          <div class="pkg-price">$19.99</div>
+          <div class="pkg-note">Power user</div>
+        </button>
+      </div>
+      <p class="upgrade-note">Credits never expire · Secure checkout via Stripe</p>
+    </div>
+  </div><!-- /sectionUpgrade -->
 
   <!-- DISCOVER DETAIL SHEET OVERLAY -->
   <div id="sheetOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:800;" onclick="closeDetailSheet()"></div>

@@ -483,14 +483,79 @@ header {
   margin-left: 0.25rem;
 }
 
-/* SOCIAL PROOF BAR */
-.social-proof-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem 1.5rem; margin: 1rem auto 0; max-width: 480px; }
-.social-proof-bar span { font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; color: #4b5563; white-space: nowrap; }
+/* SOCIAL PROOF CARDS */
+.social-proof-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin: 1.25rem auto 0;
+  max-width: 480px;
+}
+.social-proof-card {
+  background: white;
+  border-radius: 12px;
+  padding: 0.85rem 0.5rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border: 1px solid #f3f4f6;
+}
+.spc-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #E8481C;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+.spc-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #6b7280;
+  line-height: 1.2;
+}
 
 /* TESTIMONIAL CARD */
-.testimonial-card { background: #f9fafb; border-left: 3px solid #E8481C; border-radius: 8px; padding: 1rem 1.25rem; margin: 1.25rem 0 1rem; }
-.testimonial-quote { font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-style: italic; color: #1c2b3a; line-height: 1.5; margin-bottom: 0.4rem; }
-.testimonial-author { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; color: #6b7280; }
+.testimonial-card {
+  background: #fff8f6;
+  border-left: 3px solid #E8481C;
+  border-radius: 12px;
+  padding: 1.25rem 1.25rem 1rem;
+  margin: 1.25rem 0 1rem;
+  box-shadow: 0 2px 12px rgba(232,72,28,0.08);
+}
+.testimonial-stars {
+  color: #f59e0b;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.testimonial-quote {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  font-style: italic;
+  color: #1c2b3a;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+.testimonial-author {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+/* FORM STEP CARDS */
+.form-step-card {
+  background: #fafafa;
+  border-radius: 12px;
+  border-left: 3px solid #E8481C;
+  padding: 1rem 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.form-step-card .form-step-label {
+  margin-top: 0;
+}
 
 /* NO-SIGNUP NOTE */
 .no-signup-note { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #6b7280; text-align: center; margin-bottom: 0.5rem; font-weight: 500; }

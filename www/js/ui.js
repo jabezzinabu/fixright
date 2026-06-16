@@ -58,11 +58,21 @@ function hideResults() {
   if (p) p.style.display = 'none';
 }
 
+function showUpgradePage(returnTab) {
+  window._upgradeReturnTab = returnTab || 'estimate';
+  switchTab('upgrade');
+}
+function hideUpgradePage() {
+  switchTab(window._upgradeReturnTab || 'estimate');
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab !== 'upgrade') {
+    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (tab === 'visualize') {
     updateFreeNotice();
