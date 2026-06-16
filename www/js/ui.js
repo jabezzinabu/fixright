@@ -101,7 +101,7 @@ function toggleSection(id) {
 }
 
 async function trackEvent(eventType, params) {
-  if (currentUser?.role === 'admin' || currentUser?.email === 'jabezzinabu@gmail.com') return;
+  if (currentUser?.email === 'jabezzinabu@gmail.com') return;
   let tries = 0;
   while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
   if (!dbReady) return;

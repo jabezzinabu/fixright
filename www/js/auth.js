@@ -452,11 +452,6 @@ function closeSignupPopup() {
   const popup = document.getElementById('signupPopup');
   if (popup) popup.style.display = 'none';
   localStorage.setItem('diy_popup_dismissed', '1');
-  // If dismissed while trying to run an estimate, show auth modal as fallback
-  if (window._pendingAuthAfterPopup) {
-    window._pendingAuthAfterPopup = false;
-    setTimeout(showAuthModal, 300);
-  }
 }
 
 async function submitPopupSignup() {
@@ -510,19 +505,12 @@ async function submitPopupSignup() {
 }
 
 function showSignupPopupForEstimate() {
-  // Show the signup popup with estimate-specific messaging
   const popup = document.getElementById('signupPopup');
   if (!popup) { showAuthModal(); return; }
-  // Update messaging to be estimate-focused
   const title = popup.querySelector('.modal-header h3');
   const desc = popup.querySelector('.modal-body p');
   if (title) title.textContent = '🎁 Get 3 Free Visualizations';
   if (desc) desc.innerHTML = 'Sign up free to run estimates and get <strong>3 free AI visualizations</strong> — see your project before you start.';
   popup.style.display = 'flex';
   _signupPopupShown = true;
-  // If they close without signing up, show auth modal
-  const closeBtn = popup.querySelector('.modal-close');
-  const noThanks = popup.querySelector('button[onclick="closeSignupPopup()"]');
-  const originalClose = closeSignupPopup;
-  window._pendingAuthAfterPopup = true;
 }

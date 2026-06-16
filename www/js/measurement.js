@@ -52,7 +52,8 @@ function showDimPanel(material) {
   const unitLabel = isMetric ? 'm' : 'ft';
   const hasTwoDims = rate.dims.length === 2;
   fields.className = 'dim-fields' + (hasTwoDims ? ' two-col' : '');
-  fields.innerHTML = rate.dims.map((dim, i) => `
+  fields.innerHTML = `<div class="dim-panel-optional">Optional: Add dimensions for a more accurate estimate <button class="dim-panel-skip" onclick="hideDimPanel(); _dimSkipped = true;">Skip →</button></div>` +
+    rate.dims.map((dim, i) => `
     <div class="dim-field">
       <label>${rate.dimLabels[i]}</label>
       <input type="number" id="dim_${dim}" min="0" step="0.1" placeholder="0"

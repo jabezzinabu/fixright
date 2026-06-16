@@ -158,15 +158,23 @@ async function runVisualize() {
   }
 
   setVizLoading(true);
+  setVizStep('Preparing your visualization...');
   document.getElementById('vizResult').classList.remove('visible');
   hideVizError();
 
   try {
     // Step 1: Craft precise edit prompt using Claude
     let editPrompt = `Edit this photo to show the following renovation completed photorealistically: ${desc || vizConceptItem?.desc || ''}. Keep the same camera angle, lighting, and surroundings. Make it look like a real photograph.`;
+    let _progressInterval = null;
     try {
       setVizStep('Crafting edit prompt with Claude...');
       setVizProgress(20);
+      _progressInterval = setInterval(() => {
+        const bar = document.getElementById('vizProgressBar');
+        if (!bar) { clearInterval(_progressInterval); return; }
+        const current = parseFloat(bar.style.width) || 20;
+        if (current < 65) bar.style.width = (current + 1) + '%';
+      }, 800);
 
       // Build the message content — include concept image if available
       const msgContent = [];
@@ -203,10 +211,11 @@ Start with "Edit the first photo to...". Preserve the same camera angle and room
     } catch(e) { /* use fallback prompt */ }
 
     // Step 2: Call OpenAI gpt-image-1 edit
-    setVizStep('Generating photorealistic render...');
+    setVizStep('AI is generating your before & after...');
     setVizProgress(50);
-
+    clearInterval(_progressInterval);
     setVizProgress(70);
+    setVizStep('Almost there — finalizing your image...');
     // Route through server proxy — key stays hidden
     const imgResp = await fetch('/api/openai-image', {
       method: 'POST',
@@ -948,6 +957,7 @@ async function confirmVizAndEstimate() {
 
   try {
     // Step 1: Area analysis — Claude looks at before photo to estimate dimensions
+    setVizStep('Step 1 of 3 — Generating visualization...');
     let areaContext = '';
     try {
       const areaResp = await fetch('/api/anthropic', {
@@ -977,6 +987,7 @@ Be concise — 3-4 lines max. Return only the measurements, no explanation.` }
     } catch(e) { console.error('Area analysis error:', e); }
 
     if (tipEl) tipEl.textContent = 'Identifying additions and calculating costs...';
+    setVizStep('Step 2 of 3 — Analysing changes...');
 
     // Step 2: Delta analysis — what was added in after vs before
     let deltaContext = '';
@@ -1014,6 +1025,7 @@ Be specific about materials (e.g. "decomposed granite ground cover", "river rock
     }
 
     // Step 3: Build comprehensive estimate description
+    setVizStep('Step 3 of 3 — Calculating costs...');
     let estimateDesc = desc;
     if (areaContext || deltaContext) {
       estimateDesc = `${desc}
@@ -1044,6 +1056,7 @@ IMPORTANT: Use the area measurements above to calculate accurate material quanti
     // Store viz in estimate
     if (currentEstimate) currentEstimate.vizImage = vizResultImageSrc;
 
+    setVizStep('Complete!');
     // Restore confirm buttons
     actions.innerHTML = `
       <button onclick="reRenderViz()" style="background:rgba(255,255,255,0.12);color:white;border:none;border-radius:7px;padding:0.5rem 0.85rem;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">🔄 Re-render</button>
