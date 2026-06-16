@@ -726,5 +726,11 @@ function closeSampleEstimateModal() {
   results.classList.remove('visible');
   modal.classList.remove('open');
   document.body.style.overflow = '';
+  setTimeout(() => {
+    document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const fc = document.querySelector('.form-card');
+    fc.classList.add('form-highlight');
+    setTimeout(() => fc.classList.remove('form-highlight'), 1500);
+  }, 300);
 }
 
