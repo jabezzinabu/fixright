@@ -279,13 +279,13 @@ function renderResults(est) {
               <img src="${photoSrc}" alt="Before">
               <div class="viz-teaser-label">📷 Your Space</div>
             </div>
-            <div class="viz-teaser-locked" style="cursor:pointer;">
-              <img src="${photoSrc}" alt="After preview">
-              <div class="viz-teaser-locked-overlay">
+            <button class="viz-teaser-locked" style="width:100%;padding:0;border:none;border-left:2px solid #fcd5c8;background:none;cursor:pointer;position:relative;display:block;overflow:hidden;">
+              <img src="${photoSrc}" alt="After preview" style="pointer-events:none;">
+              <div class="viz-teaser-locked-overlay" style="pointer-events:none;">
                 <div class="lock-icon">🔒</div>
                 <div class="lock-text">AI Visualization<br>Unlocked with credits</div>
               </div>
-            </div>
+            </button>
           </div>
           <div class="viz-teaser-cta">
             <button class="teaser-unlock-btn">✨ Unlock Before &amp; After — from $3.99</button>
