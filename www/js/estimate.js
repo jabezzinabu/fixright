@@ -67,6 +67,12 @@ zone.addEventListener('click', e => {
   document.getElementById('photoInput').click();
 });
 
+document.getElementById('teaserCloseBtn').addEventListener('click', function() {
+  document.getElementById('vizTeaser').style.display = 'none';
+});
+document.getElementById('teaserUnlockBtn').addEventListener('click', showVizPackageModal);
+document.getElementById('teaserUnlockImg').addEventListener('click', showVizPackageModal);
+
 // ─── ESTIMATE ─────────────────────────────────────────────────────────────────
 async function runEstimate() {
   const desc = document.getElementById('description').value.trim();
@@ -268,34 +274,11 @@ function renderResults(est) {
     const hasViz = est.vizImage || vizResultImageSrc;
     if (hasPhoto && !hasViz && !est.isDemo) {
       const photoSrc = est.beforeImage || (imageBase64 ? 'data:image/jpeg;base64,' + imageBase64 : null);
-      teaserEl.innerHTML = `
-        <div class="viz-teaser">
-          <div class="viz-teaser-header" style="display:flex;align-items:center;justify-content:space-between;">
-            <span>✨ See Your Project Transformed</span>
-            <button class="teaser-close-btn" onclick="document.getElementById('vizTeaser').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.2rem;cursor:pointer;padding:0 0.25rem;line-height:1;" title="Close">✕</button>
-          </div>
-          <div class="viz-teaser-grid">
-            <div class="viz-teaser-img-wrap">
-              <img src="${photoSrc}" alt="Before">
-              <div class="viz-teaser-label">📷 Your Space</div>
-            </div>
-            <button class="viz-teaser-locked" onclick="showVizPackageModal()" style="width:100%;padding:0;border:none;border-left:2px solid #fcd5c8;background:none;cursor:pointer;position:relative;display:block;overflow:hidden;">
-              <img src="${photoSrc}" alt="After preview" style="pointer-events:none;">
-              <div class="viz-teaser-locked-overlay" style="pointer-events:none;">
-                <div class="lock-icon">🔒</div>
-                <div class="lock-text">AI Visualization<br>Unlocked with credits</div>
-              </div>
-            </button>
-          </div>
-          <div class="viz-teaser-cta">
-            <button class="teaser-unlock-btn" onclick="showVizPackageModal()">✨ Unlock Before &amp; After — from $3.99</button>
-            <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
-          </div>
-        </div>`;
+      document.getElementById('teaserBeforeImg').src = photoSrc;
+      document.getElementById('teaserAfterImg').src = photoSrc;
       teaserEl.style.display = 'block';
     } else {
       teaserEl.style.display = 'none';
-      teaserEl.innerHTML = '';
     }
   }
 

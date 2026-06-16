@@ -243,7 +243,31 @@
     <!-- RESULTS -->
     <div id="results">
       <!-- VIZ TEASER — shown when user has photo but no viz credits -->
-      <div id="vizTeaser" style="display:none;"></div>
+      <div id="vizTeaser" style="display:none;">
+        <div class="viz-teaser">
+          <div class="viz-teaser-header">
+            <span>✨ See Your Project Transformed</span>
+            <button id="teaserCloseBtn">✕</button>
+          </div>
+          <div class="viz-teaser-grid">
+            <div class="viz-teaser-img-wrap">
+              <img id="teaserBeforeImg" src="" alt="Before">
+              <div class="viz-teaser-label">📷 Your Space</div>
+            </div>
+            <button id="teaserUnlockImg" class="viz-teaser-locked">
+              <img id="teaserAfterImg" src="" alt="AI Visualization">
+              <div class="viz-teaser-locked-overlay">
+                <div class="lock-icon">🔒</div>
+                <div class="lock-text">AI Visualization<br>Unlocked with credits</div>
+              </div>
+            </button>
+          </div>
+          <div class="viz-teaser-cta">
+            <button id="teaserUnlockBtn">✨ Unlock Before &amp; After — from $3.99</button>
+            <div class="viz-teaser-note">AI transforms your photo · 3, 5, 10 or 25 credits</div>
+          </div>
+        </div>
+      </div>
       <div class="result-header">
         <div class="result-title" id="resultTitle"></div>
         <div class="price-row">
