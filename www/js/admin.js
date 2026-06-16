@@ -166,8 +166,22 @@ function adminEstNext() { if ((_adminEstPage + 1) * ADMIN_EST_PAGE_SIZE < _admin
 
 function selectAdminEstimate(id, row) {
   currentAdminEstimateId = id;
-  document.querySelectorAll('#estimatesBody tr').forEach(r => r.style.background = '');
-  row.style.background = '#fff8f6';
+  document.querySelectorAll('#estimatesBody tr').forEach(r => {
+    r.style.outline = '';
+    r.style.background = '';
+    const b = r.querySelector('.est-selected-badge');
+    if (b) b.remove();
+  });
+  row.style.outline = '2px solid #E8481C';
+  row.style.background = '#fff8f0';
+  const firstCell = row.querySelector('td');
+  if (firstCell) {
+    const badge = document.createElement('span');
+    badge.className = 'est-selected-badge';
+    badge.style.cssText = 'display:inline-block;margin-left:0.4rem;background:#E8481C;color:white;font-size:0.62rem;font-weight:700;padding:1px 6px;border-radius:99px;vertical-align:middle;';
+    badge.textContent = 'Selected';
+    firstCell.appendChild(badge);
+  }
 }
 
 async function setDemoSlot(slot, estimateId) {
