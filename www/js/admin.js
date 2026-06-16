@@ -1,5 +1,7 @@
 window._adminLoaded = true;
 
+let currentAdminEstimateId = null;
+
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 async function loadAdminData() {
   if (!isAdmin() || !dbReady) return;
@@ -8,6 +10,7 @@ async function loadAdminData() {
   loadAdminUsers();
   loadAnalytics();
   runHealthChecks();
+  loadDemoSlots();
   const el = document.getElementById('adminLastRefresh');
   if (el) el.textContent = 'Last refreshed: ' + new Date().toLocaleTimeString();
   // Restore feature flag states
@@ -102,13 +105,12 @@ function renderAdminEstimatesPage() {
     } else {
       userDisplay = '<div style="font-size:0.72rem;color:var(--muted);">Anonymous</div>';
     }
-    return `<tr>
+    return `<tr style="cursor:pointer;" onclick="selectAdminEstimate('${e.id}', this)">
       <td style="font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title || 'Untitled'}</td>
       <td style="color:var(--rust);font-weight:600">${e.price_range || '—'}</td>
       <td style="font-size:0.8rem;">${formatRegion(e.region)}</td>
       <td>${userDisplay}</td>
       <td style="color:var(--muted);font-size:0.8rem;">${new Date(e.created_at).toLocaleDateString()}</td>
-      <td><button onclick="setDemoEstimate('${e.id}')" style="font-size:0.72rem;background:#f3f4f6;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Set Demo</button></td>
     </tr>`;
   }).join('');
   // Pagination controls
@@ -161,6 +163,65 @@ async function setDemoEstimate(id) {
 
 function adminEstPrev() { if (_adminEstPage > 0) { _adminEstPage--; renderAdminEstimatesPage(); } }
 function adminEstNext() { if ((_adminEstPage + 1) * ADMIN_EST_PAGE_SIZE < _adminEstimates.length) { _adminEstPage++; renderAdminEstimatesPage(); } }
+
+function selectAdminEstimate(id, row) {
+  currentAdminEstimateId = id;
+  document.querySelectorAll('#estimatesBody tr').forEach(r => r.style.background = '');
+  row.style.background = '#fff8f6';
+}
+
+async function setDemoSlot(slot, estimateId) {
+  if (!estimateId) { showToast('Select an estimate from the list first'); return; }
+  const keys = { 1: 'demo_estimate_yard', 2: 'demo_estimate_interior', 3: 'demo_estimate_painting' };
+  const key = keys[slot];
+  try {
+    const { data: est, error: estErr } = await db.from('estimates').select('*').eq('id', estimateId).single();
+    if (estErr || !est) throw estErr || new Error('Estimate not found');
+    const demoPayload = {
+      title: est.title,
+      priceRange: est.price_range,
+      difficulty: est.difficulty,
+      timeline: est.timeline,
+      materials: est.materials || [],
+      steps: est.steps || [],
+      warnings: est.warnings || [],
+      tip: est.tip || '',
+      desc: est.description || '',
+      vizImage: est.viz_image || null,
+      beforeImage: est.before_image || null,
+      isDemo: true,
+    };
+    await db.from('shared_estimates').upsert({ id: estimateId, data: demoPayload }, { onConflict: 'id' });
+    await db.from('app_config').upsert({ key, value: estimateId }, { onConflict: 'key' });
+    showToast('✅ Demo slot ' + slot + ' updated');
+    loadDemoSlots();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function clearDemoSlot(slot) {
+  const keys = { 1: 'demo_estimate_yard', 2: 'demo_estimate_interior', 3: 'demo_estimate_painting' };
+  const key = keys[slot];
+  try {
+    await db.from('app_config').delete().eq('key', key);
+    showToast('Demo slot ' + slot + ' cleared');
+    loadDemoSlots();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function loadDemoSlots() {
+  const keys = ['demo_estimate_yard', 'demo_estimate_interior', 'demo_estimate_painting'];
+  try {
+    const { data } = await db.from('app_config').select('key, value').in('key', keys);
+    const map = {};
+    (data || []).forEach(r => map[r.key] = r.value);
+    for (let i = 1; i <= 3; i++) {
+      const keyMap = { 1: 'demo_estimate_yard', 2: 'demo_estimate_interior', 3: 'demo_estimate_painting' };
+      const val = map[keyMap[i]];
+      const el = document.getElementById('demoSlot' + i + 'Title');
+      if (el) el.textContent = val ? 'ID: ' + val.substring(0, 8) + '...' : 'Not set';
+    }
+  } catch(e) { console.error('loadDemoSlots:', e); }
+}
 
 let _allUsers = [];
 

@@ -562,3 +562,15 @@ header {
 
 /* FORM HIGHLIGHT (post-modal scroll) */
 .form-card.form-highlight { box-shadow: 0 0 0 3px #E8481C, 0 4px 24px rgba(232,72,28,0.15); transition: box-shadow 0.3s ease; }
+
+/* ADMIN DEMO SLOTS */
+.demo-slots { display: flex; flex-direction: column; gap: 0.75rem; margin: 1rem 0; }
+.demo-slots-title { font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.demo-slot { background: var(--cream); border-radius: 10px; padding: 0.85rem 1rem; border: 1px solid var(--border); }
+.demo-slot-label { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 700; color: #1c2b3a; margin-bottom: 0.25rem; }
+.demo-slot-current { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #6b7280; margin-bottom: 0.5rem; font-style: italic; }
+.demo-slot-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn-admin-action { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600; background: #f3f4f6; border: 1px solid var(--border); border-radius: 6px; padding: 0.3rem 0.75rem; cursor: pointer; color: #1c2b3a; transition: background 0.15s; }
+.btn-admin-action:hover { background: #e5e7eb; }
+.btn-admin-action.danger { background: #fff0ed; border-color: #fcd5c8; color: #E8481C; }
+.btn-admin-action.danger:hover { background: #ffe4dd; }
