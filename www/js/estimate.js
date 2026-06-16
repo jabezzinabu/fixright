@@ -293,9 +293,6 @@ function renderResults(est) {
           </div>
         </div>`;
       teaserEl.style.display = 'block';
-      teaserEl.querySelector('.teaser-close-btn').addEventListener('click', () => { teaserEl.style.display = 'none'; });
-      teaserEl.querySelector('.teaser-unlock-btn').addEventListener('click', showVizPackageModal);
-      teaserEl.querySelector('.viz-teaser-locked').addEventListener('click', showVizPackageModal);
     } else {
       teaserEl.style.display = 'none';
       teaserEl.innerHTML = '';
@@ -747,3 +744,12 @@ function closeSampleEstimateModal() {
   modal.classList.remove('open');
   document.body.style.overflow = '';
 }
+
+document.getElementById('results').addEventListener('click', function(e) {
+  if (e.target.closest('.teaser-close-btn')) {
+    document.getElementById('vizTeaser').style.display = 'none';
+  }
+  if (e.target.closest('.teaser-unlock-btn') || e.target.closest('.viz-teaser-locked')) {
+    showVizPackageModal();
+  }
+});
