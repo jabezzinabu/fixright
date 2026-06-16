@@ -70,8 +70,8 @@ zone.addEventListener('click', e => {
 document.getElementById('teaserCloseBtn').addEventListener('click', function() {
   document.getElementById('vizTeaser').style.display = 'none';
 });
-document.getElementById('teaserUnlockBtn').addEventListener('click', showVizPackageModal);
-document.getElementById('teaserUnlockImg').addEventListener('click', showVizPackageModal);
+document.getElementById('teaserUnlockBtn').addEventListener('click', () => showVizPackageModal());
+document.getElementById('teaserUnlockImg').addEventListener('click', () => showVizPackageModal());
 
 // ─── ESTIMATE ─────────────────────────────────────────────────────────────────
 async function runEstimate() {
