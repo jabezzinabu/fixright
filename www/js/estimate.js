@@ -679,12 +679,7 @@ async function showFallbackHeroCard() {
     document.getElementById('fallbackHeroCard').style.display = 'block';
     const carouselEl = document.getElementById('demoCarousel');
     if (carouselEl) carouselEl.style.display = 'none';
-    const btn = document.getElementById('demoHeroBtn');
-    if (btn) btn.onclick = function() {
-      trackEvent('see_sample_click');
-      _demoEstimateData = est;
-      openSampleEstimateModal();
-    };
+    _demoEstimateData = est;
   } catch(e) { console.error('fallback hero error:', e); }
 }
 

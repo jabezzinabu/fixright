@@ -9,17 +9,12 @@
   margin-bottom: 1.5rem;
 }
 .hero-eyebrow {
-  display: inline-block;
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  color: #9ca3af;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #E8481C;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  background: rgba(232,72,28,0.08);
-  border: 1px solid rgba(232,72,28,0.2);
-  padding: 0.3rem 0.9rem;
-  border-radius: 99px;
+  margin-bottom: 0.5rem;
 }
 .hero h1 {
   font-family: 'Playfair Display', serif;
@@ -27,6 +22,19 @@
   color: #111111;
   line-height: 1.15;
   margin-bottom: 0.75rem;
+  animation: fadeUp 0.5s ease both;
+}
+.trust-line {
+  animation: fadeUp 0.6s ease both;
+}
+#fallbackHeroCard {
+  animation: fadeUp 0.7s ease both;
+}
+.primary-cta-wrap {
+  animation: fadeUp 0.8s ease both;
+}
+.how-it-works {
+  animation: fadeUp 0.9s ease both;
 }
 .hero p {
   color: var(--muted);
@@ -132,6 +140,15 @@ textarea { min-height: 90px; }
 .demo-hero-label { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; z-index: 1; pointer-events: none; }
 .demo-hero-label.after { left: auto; right: 8px; background: #E8481C; }
 .demo-hero-cta { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: #E8481C; color: #fff; border: none; border-radius: 99px; padding: 0.45rem 1.1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; box-shadow: 0 2px 10px rgba(232,72,28,0.5); z-index: 1; animation: pulse-btn 2.5s ease-in-out infinite; }
+
+/* IMAGE PLACEHOLDERS */
+#fallbackHeroCard img {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  min-height: 120px;
+}
+#demoBeforeImg, #demoAfterImg {
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+}
 
 /* DEMO CAROUSEL */
 #demoCarousel { margin-bottom: 1.5rem; position: relative; }
