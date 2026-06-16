@@ -297,6 +297,7 @@ function showUpgradeModal() {
 }
 function showVizPackageModal() {
   if (!currentUser) { showSignupPopup(); return; }
+  document.querySelectorAll('.modal-overlay.open, .modal.open').forEach(m => m.classList.remove('open'));
   document.getElementById('upgradeModal').classList.add('open');
   trackEvent('upgrade_click');
 }
@@ -1070,13 +1071,13 @@ IMPORTANT: Use the area measurements above to calculate accurate material quanti
 }
 
 // Wire upgrade modal buttons — safari-safe, no onclick= in HTML
-(function wireUpgradeModal() {
+document.addEventListener('DOMContentLoaded', function wireUpgradeModal() {
   document.getElementById('upgradeModalClose').addEventListener('click', closeUpgradeModal);
   document.getElementById('upgradeModalLater').addEventListener('click', closeUpgradeModal);
   document.querySelectorAll('#upgradeModal button[data-viz-pkg]').forEach(btn => {
     btn.addEventListener('click', () => buyVizPackage(parseInt(btn.dataset.vizPkg, 10)));
   });
-})();
+});
 
 function checkStripeRedirect() {
   const params = new URLSearchParams(window.location.search);
