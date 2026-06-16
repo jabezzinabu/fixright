@@ -123,6 +123,16 @@ textarea { min-height: 90px; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
 @media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; } }
 
+/* FALLBACK HERO CARD */
+#fallbackHeroCard { margin-bottom: 0.85rem; }
+.demo-hero-card { border-radius: 14px; overflow: hidden; border: 1.5px solid #fcd5c8; }
+.demo-hero-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.demo-hero-img-wrap { position: relative; }
+.demo-hero-img-wrap img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.demo-hero-label { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.55); color: #fff; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; z-index: 1; pointer-events: none; }
+.demo-hero-label.after { left: auto; right: 8px; background: #E8481C; }
+.demo-hero-cta { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: #E8481C; color: #fff; border: none; border-radius: 99px; padding: 0.45rem 1.1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; box-shadow: 0 2px 10px rgba(232,72,28,0.5); z-index: 1; animation: pulse-btn 2.5s ease-in-out infinite; }
+
 /* DEMO CAROUSEL */
 #demoCarousel { margin-bottom: 1.5rem; position: relative; }
 .carousel-track-wrap { position: relative; overflow: hidden; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
