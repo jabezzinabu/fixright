@@ -678,12 +678,13 @@ async function initDemoCarousel() {
 
   if (!dbReady) { setTimeout(initDemoCarousel, 300); return; }
   try {
-    const keys = DEMO_SLOTS.map(s => s.key);
+    const labelKeyMap = { 'demo_estimate_yard': 'demo_label_yard', 'demo_estimate_interior': 'demo_label_interior', 'demo_estimate_painting': 'demo_label_painting' };
+    const keys = [...DEMO_SLOTS.map(s => s.key), ...Object.values(labelKeyMap)];
     const { data: configRows } = await db.from('app_config').select('key,value').in('key', keys);
     if (!configRows || !configRows.length) return;
     const idMap = {};
     configRows.forEach(r => idMap[r.key] = r.value);
-    const ids = Object.values(idMap).filter(Boolean);
+    const ids = DEMO_SLOTS.map(s => idMap[s.key]).filter(Boolean);
     if (!ids.length) return;
     const { data: estimates } = await db.from('shared_estimates').select('id,data').in('id', ids);
     if (!estimates || !estimates.length) return;
@@ -694,7 +695,8 @@ async function initDemoCarousel() {
         const id = idMap[slot.key];
         const est = id && estMap[id];
         if (!est || !est.beforeImage || !est.vizImage) return null;
-        return { label: slot.label, before: est.beforeImage, after: est.vizImage, data: est, id };
+        const label = idMap[labelKeyMap[slot.key]] || slot.label;
+        return { label, before: est.beforeImage, after: est.vizImage, data: est, id };
       })
       .filter(Boolean);
     if (!_carouselSlides.length) return;

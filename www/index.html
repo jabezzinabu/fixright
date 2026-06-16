@@ -784,35 +784,31 @@
     <div class="admin-section">
       <div class="admin-section-head">📋 Recent Estimates</div>
 
-      <div style="font-family:'DM Sans',sans-serif;font-size:0.82rem;color:#1c2b3a;margin:0 0 0.75rem;padding:0.6rem 0.85rem;background:#fff8f0;border:1px solid #f5c9a0;border-radius:8px;line-height:1.5;">
-        <strong>Step 1:</strong> Click an estimate from the list below to select it.&nbsp;&nbsp;<strong>Step 2:</strong> Click a slot button to assign it.
-      </div>
-
       <div class='demo-slots'>
         <div class='demo-slots-title'>Sample Estimates (shown on home page carousel)</div>
         <div class='demo-slot' id='demoSlot1'>
-          <div class='demo-slot-label'>🌿 Yard / Landscaping</div>
-          <div class='demo-slot-current' id='demoSlot1Title'>Not set</div>
-          <div class='demo-slot-actions'>
-            <button class='btn-admin-action' onclick='setDemoSlot(1, currentAdminEstimateId)'>Set as Yard Demo</button>
-            <button class='btn-admin-action danger' onclick='clearDemoSlot(1)'>Clear</button>
+          <div class='demo-slot-header'>
+            <input class='demo-slot-cat-input' id='demoSlot1Cat' value='🌿 Yard' placeholder='Category name' />
+            <button class='btn-admin-action' onclick='saveDemoSlotCategory(1)'>Save Label</button>
           </div>
+          <div class='demo-slot-current' id='demoSlot1Title'>Not set</div>
+          <button class='btn-admin-action danger' onclick='clearDemoSlot(1)'>Clear</button>
         </div>
         <div class='demo-slot' id='demoSlot2'>
-          <div class='demo-slot-label'>🛋️ Interior Design</div>
-          <div class='demo-slot-current' id='demoSlot2Title'>Not set</div>
-          <div class='demo-slot-actions'>
-            <button class='btn-admin-action' onclick='setDemoSlot(2, currentAdminEstimateId)'>Set as Interior Demo</button>
-            <button class='btn-admin-action danger' onclick='clearDemoSlot(2)'>Clear</button>
+          <div class='demo-slot-header'>
+            <input class='demo-slot-cat-input' id='demoSlot2Cat' value='🛋️ Interior' placeholder='Category name' />
+            <button class='btn-admin-action' onclick='saveDemoSlotCategory(2)'>Save Label</button>
           </div>
+          <div class='demo-slot-current' id='demoSlot2Title'>Not set</div>
+          <button class='btn-admin-action danger' onclick='clearDemoSlot(2)'>Clear</button>
         </div>
         <div class='demo-slot' id='demoSlot3'>
-          <div class='demo-slot-label'>🎨 Painting / Refresh</div>
-          <div class='demo-slot-current' id='demoSlot3Title'>Not set</div>
-          <div class='demo-slot-actions'>
-            <button class='btn-admin-action' onclick='setDemoSlot(3, currentAdminEstimateId)'>Set as Painting Demo</button>
-            <button class='btn-admin-action danger' onclick='clearDemoSlot(3)'>Clear</button>
+          <div class='demo-slot-header'>
+            <input class='demo-slot-cat-input' id='demoSlot3Cat' value='🎨 Painting' placeholder='Category name' />
+            <button class='btn-admin-action' onclick='saveDemoSlotCategory(3)'>Save Label</button>
           </div>
+          <div class='demo-slot-current' id='demoSlot3Title'>Not set</div>
+          <button class='btn-admin-action danger' onclick='clearDemoSlot(3)'>Clear</button>
         </div>
       </div>
 
@@ -827,6 +823,7 @@
               <th>Region</th>
               <th>User</th>
               <th>Date</th>
+              <th>Demo</th>
             </tr>
           </thead>
           <tbody id="estimatesBody"></tbody>

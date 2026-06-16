@@ -1,7 +1,5 @@
 window._adminLoaded = true;
 
-let currentAdminEstimateId = null;
-
 // ─── ADMIN DASHBOARD ──────────────────────────────────────────────────────────
 async function loadAdminData() {
   if (!isAdmin() || !dbReady) return;
@@ -105,12 +103,17 @@ function renderAdminEstimatesPage() {
     } else {
       userDisplay = '<div style="font-size:0.72rem;color:var(--muted);">Anonymous</div>';
     }
-    return `<tr style="cursor:pointer;" onclick="selectAdminEstimate('${e.id}', this)">
+    return `<tr>
       <td style="font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title || 'Untitled'}</td>
       <td style="color:var(--rust);font-weight:600">${e.price_range || '—'}</td>
       <td style="font-size:0.8rem;">${formatRegion(e.region)}</td>
       <td>${userDisplay}</td>
       <td style="color:var(--muted);font-size:0.8rem;">${new Date(e.created_at).toLocaleDateString()}</td>
+      <td style="white-space:nowrap;">
+        <button class='btn-demo-slot' onclick='setDemoSlot(1, "${e.id}")' title='Set as Demo 1 - Yard'>D1</button>
+        <button class='btn-demo-slot' onclick='setDemoSlot(2, "${e.id}")' title='Set as Demo 2 - Interior'>D2</button>
+        <button class='btn-demo-slot' onclick='setDemoSlot(3, "${e.id}")' title='Set as Demo 3 - Painting'>D3</button>
+      </td>
     </tr>`;
   }).join('');
   // Pagination controls
@@ -164,26 +167,6 @@ async function setDemoEstimate(id) {
 function adminEstPrev() { if (_adminEstPage > 0) { _adminEstPage--; renderAdminEstimatesPage(); } }
 function adminEstNext() { if ((_adminEstPage + 1) * ADMIN_EST_PAGE_SIZE < _adminEstimates.length) { _adminEstPage++; renderAdminEstimatesPage(); } }
 
-function selectAdminEstimate(id, row) {
-  currentAdminEstimateId = id;
-  document.querySelectorAll('#estimatesBody tr').forEach(r => {
-    r.style.outline = '';
-    r.style.background = '';
-    const b = r.querySelector('.est-selected-badge');
-    if (b) b.remove();
-  });
-  row.style.outline = '2px solid #E8481C';
-  row.style.background = '#fff8f0';
-  const firstCell = row.querySelector('td');
-  if (firstCell) {
-    const badge = document.createElement('span');
-    badge.className = 'est-selected-badge';
-    badge.style.cssText = 'display:inline-block;margin-left:0.4rem;background:#E8481C;color:white;font-size:0.62rem;font-weight:700;padding:1px 6px;border-radius:99px;vertical-align:middle;';
-    badge.textContent = 'Selected';
-    firstCell.appendChild(badge);
-  }
-}
-
 async function setDemoSlot(slot, estimateId) {
   if (!estimateId) { showToast('Select an estimate from the list first'); return; }
   const keys = { 1: 'demo_estimate_yard', 2: 'demo_estimate_interior', 3: 'demo_estimate_painting' };
@@ -209,6 +192,7 @@ async function setDemoSlot(slot, estimateId) {
     await db.from('app_config').upsert({ key, value: estimateId }, { onConflict: 'key' });
     showToast('✅ Demo slot ' + slot + ' updated');
     loadDemoSlots();
+    initDemoCarousel();
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
@@ -222,8 +206,19 @@ async function clearDemoSlot(slot) {
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
+async function saveDemoSlotCategory(slot) {
+  const catKeys = { 1: 'demo_label_yard', 2: 'demo_label_interior', 3: 'demo_label_painting' };
+  const val = document.getElementById('demoSlot' + slot + 'Cat').value;
+  try {
+    await db.from('app_config').upsert({ key: catKeys[slot], value: val }, { onConflict: 'key' });
+    showToast('✅ Label saved');
+    initDemoCarousel();
+  } catch(e) { showToast('Error: ' + e.message); }
+}
+
 async function loadDemoSlots() {
-  const keys = ['demo_estimate_yard', 'demo_estimate_interior', 'demo_estimate_painting'];
+  const keys = ['demo_estimate_yard', 'demo_estimate_interior', 'demo_estimate_painting',
+                 'demo_label_yard', 'demo_label_interior', 'demo_label_painting'];
   try {
     const { data } = await db.from('app_config').select('key, value').in('key', keys);
     const map = {};
@@ -234,6 +229,12 @@ async function loadDemoSlots() {
       const el = document.getElementById('demoSlot' + i + 'Title');
       if (el) el.textContent = val ? 'ID: ' + val.substring(0, 8) + '...' : 'Not set';
     }
+    const c1 = document.getElementById('demoSlot1Cat');
+    const c2 = document.getElementById('demoSlot2Cat');
+    const c3 = document.getElementById('demoSlot3Cat');
+    if (c1) c1.value = map['demo_label_yard'] || '🌿 Yard';
+    if (c2) c2.value = map['demo_label_interior'] || '🛋️ Interior';
+    if (c3) c3.value = map['demo_label_painting'] || '🎨 Painting';
   } catch(e) { console.error('loadDemoSlots:', e); }
 }
 

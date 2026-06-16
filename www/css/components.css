@@ -574,3 +574,17 @@ header {
 .btn-admin-action:hover { background: #e5e7eb; }
 .btn-admin-action.danger { background: #fff0ed; border-color: #fcd5c8; color: #E8481C; }
 .btn-admin-action.danger:hover { background: #ffe4dd; }
+.btn-demo-slot {
+  background: #1c2b3a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-demo-slot:hover { background: #E8481C; }
+.demo-slot-header { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+.demo-slot-cat-input { flex: 1; padding: 0.35rem 0.6rem; border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; outline: none; }
