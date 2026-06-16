@@ -142,18 +142,6 @@
         </div>
       </div>
 
-      <!-- DEMO CAROUSEL -->
-      <div id='demoCarousel' style='display:none;'>
-        <div class='carousel-track-wrap'>
-          <div class='carousel-track' id='demoCarouselTrack'>
-            <!-- slots injected by JS -->
-          </div>
-          <button class='carousel-arrow carousel-prev' id='demoCarouselPrev'>‹</button>
-          <button class='carousel-arrow carousel-next' id='demoCarouselNext'>›</button>
-        </div>
-        <div class='carousel-dots' id='demoCarouselDots'></div>
-      </div>
-
       <!-- DESCRIPTION -->
       <div class="form-step-card">
         <div class="form-step-label"><span class="step-number">1</span> Describe your project</div>
@@ -1027,9 +1015,7 @@ window.addEventListener('load', () => {
 
   initSupabase();
   checkSession();
-  initDemoCarousel().catch(() => showFallbackHeroCard());
-  document.getElementById('demoCarouselPrev').addEventListener('click', () => goCarousel(_carouselIndex - 1));
-  document.getElementById('demoCarouselNext').addEventListener('click', () => goCarousel(_carouselIndex + 1));
+  showFallbackHeroCard();
   const _submitBtn = document.getElementById('submitBtn');
   if (_submitBtn) _submitBtn.addEventListener('click', () => (typeof runCombinedEstimate === 'function' ? runCombinedEstimate() : runEstimate()));
 

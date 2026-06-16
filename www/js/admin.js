@@ -193,7 +193,6 @@ async function setDemoSlot(slot, estimateId) {
     showToast('✅ Demo slot ' + slot + ' updated');
     console.log('[Demo] Slot', slot, 'set to', estimateId, 'key:', key);
     loadDemoSlots();
-    initDemoCarousel();
   } catch(e) { showToast('Error: ' + e.message); }
 }
 
@@ -213,7 +212,6 @@ async function saveDemoSlotCategory(slot) {
   try {
     await db.from('app_config').upsert({ key: catKeys[slot], value: val }, { onConflict: 'key' });
     showToast('✅ Label saved');
-    initDemoCarousel();
   } catch(e) { showToast('Error: ' + e.message); }
 }
 

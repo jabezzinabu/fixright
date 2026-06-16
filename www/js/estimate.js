@@ -654,66 +654,11 @@ function clearResults(e) {
   currentEstimate = null;
 }
 
-// ─── DEMO CAROUSEL + SAMPLE ESTIMATE MODAL ─────────────────────────────────
-
-const DEMO_SLOTS = [
-  { key: 'demo_estimate_yard', label: '🌿 Yard' },
-  { key: 'demo_estimate_interior', label: '🛋️ Interior' },
-  { key: 'demo_estimate_painting', label: '🎨 Painting' }
-];
-let _carouselSlides = [];
-let _carouselIndex = 0;
+// ─── SAMPLE ESTIMATE MODAL ───────────────────────────────────────────────────
 
 let _demoEstimateData = null;
 let _resultsOriginalParent = null;
 let _resultsOriginalNextSibling = null;
-
-async function initDemoCarousel() {
-  const closeBtn = document.getElementById('sampleEstimateClose');
-  const tryBtn = document.getElementById('sampleEstimateTryBtn');
-  const overlay = document.getElementById('sampleEstimateModal');
-  if (closeBtn) closeBtn.addEventListener('click', closeSampleEstimateModal);
-  if (tryBtn) tryBtn.addEventListener('click', closeSampleEstimateModal);
-  if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSampleEstimateModal(); });
-
-  if (!dbReady) { setTimeout(initDemoCarousel, 300); return; }
-  try {
-    const keys = ['demo_estimate_yard', 'demo_estimate_interior', 'demo_estimate_painting'];
-    const labelKeys = ['demo_label_yard', 'demo_label_interior', 'demo_label_painting'];
-    const defaultLabels = ['🌿 Yard', '🛋️ Interior', '🎨 Painting'];
-    const { data: configRows, error: configErr } = await db.from('app_config')
-      .select('key,value').in('key', [...keys, ...labelKeys]);
-    if (configErr) { console.error('carousel config error:', configErr); showFallbackHeroCard(); return; }
-    const map = {};
-    (configRows || []).forEach(r => map[r.key] = r.value);
-    const ids = keys.map(k => map[k]).filter(Boolean);
-    if (!ids.length) { showFallbackHeroCard(); return; }
-    const { data: estimates, error: estErr } = await db.from('shared_estimates')
-      .select('id,data').in('id', ids);
-    if (estErr || !estimates || !estimates.length) { showFallbackHeroCard(); return; }
-    const estMap = {};
-    estimates.forEach(e => estMap[e.id] = e.data);
-    _carouselSlides = keys.map((k, i) => {
-      const id = map[k];
-      const est = id && estMap[id];
-      if (!est) return null;
-      const before = est.beforeImage || est.imageBase64 || null;
-      const after = est.vizImage || est.vizResultImageSrc || null;
-      if (!before || !after) return null;
-      return {
-        label: map[labelKeys[i]] || defaultLabels[i],
-        before, after, data: est, id
-      };
-    }).filter(Boolean);
-    if (!_carouselSlides.length) { showFallbackHeroCard(); return; }
-    renderCarousel();
-    document.getElementById('demoCarousel').style.display = 'block';
-    document.getElementById('fallbackHeroCard').style.display = 'none';
-  } catch(e) {
-    console.error('initDemoCarousel error:', e);
-    showFallbackHeroCard();
-  }
-}
 
 async function showFallbackHeroCard() {
   if (!dbReady) { setTimeout(showFallbackHeroCard, 300); return; }
@@ -735,67 +680,6 @@ async function showFallbackHeroCard() {
       openSampleEstimateModal();
     };
   } catch(e) { console.error('fallback hero error:', e); }
-}
-
-function renderCarousel() {
-  const track = document.getElementById('demoCarouselTrack');
-  const dots = document.getElementById('demoCarouselDots');
-  track.innerHTML = '';
-  dots.innerHTML = '';
-  _carouselSlides.forEach((slide, i) => {
-    const div = document.createElement('div');
-    div.className = 'carousel-slide';
-    div.innerHTML = `
-      <div style="position:relative;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;">
-          <div style="position:relative;">
-            <img src="${slide.before}" alt="Before" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
-            <span style="position:absolute;top:0.5rem;left:0.5rem;background:rgba(0,0,0,0.5);color:white;font-size:0.6rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:4px;font-family:'DM Sans',sans-serif;">BEFORE</span>
-          </div>
-          <div style="position:relative;">
-            <img src="${slide.after}" alt="After" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
-            <span style="position:absolute;top:0.5rem;right:0.5rem;background:#E8481C;color:white;font-size:0.6rem;font-weight:700;padding:0.15rem 0.4rem;border-radius:4px;font-family:'DM Sans',sans-serif;">AFTER</span>
-          </div>
-        </div>
-        <span class="carousel-category-pill">${slide.label}</span>
-        <button class="carousel-cta-btn" onclick="openCarouselSample(${i})">See Sample Estimate →</button>
-      </div>
-    `;
-    track.appendChild(div);
-    const dot = document.createElement('button');
-    dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-    dot.onclick = () => goCarousel(i);
-    dots.appendChild(dot);
-  });
-  updateCarouselPosition();
-  wireCarouselSwipe();
-}
-
-function goCarousel(index) {
-  _carouselIndex = Math.max(0, Math.min(index, _carouselSlides.length - 1));
-  updateCarouselPosition();
-}
-
-function updateCarouselPosition() {
-  document.getElementById('demoCarouselTrack').style.transform = `translateX(-${_carouselIndex * 100}%)`;
-  document.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === _carouselIndex));
-}
-
-function openCarouselSample(index) {
-  const slide = _carouselSlides[index];
-  if (!slide) return;
-  _demoEstimateData = slide.data;
-  openSampleEstimateModal();
-}
-
-function wireCarouselSwipe() {
-  const track = document.getElementById('demoCarouselTrack');
-  let startX = 0;
-  track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-  track.addEventListener('touchend', e => {
-    const diff = startX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) goCarousel(_carouselIndex + (diff > 0 ? 1 : -1));
-  }, { passive: true });
 }
 
 function openSampleEstimateModal() {
