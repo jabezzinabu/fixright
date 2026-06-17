@@ -938,7 +938,7 @@ textarea { min-height: 90px; }
 .upgrade-note { text-align: center; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #9ca3af; }
 .upgrade-hero-img { margin-bottom: 1.5rem; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
 .uhi-grid { display: grid; grid-template-columns: 1fr 1fr; }
-.uhi-before, .uhi-after { position: relative; }
+.uhi-before, .uhi-after { position: relative; overflow: hidden; }
 .uhi-before img, .uhi-after img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); min-height: 100px; }
 .uhi-label { position: absolute; top: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.5); color: white; font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; }
 .uhi-label.after { left: auto; right: 0.5rem; background: #E8481C; }

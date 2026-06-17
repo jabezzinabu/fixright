@@ -58,16 +58,33 @@ function hideResults() {
   if (p) p.style.display = 'none';
 }
 
-function showUpgradePage(returnTab) {
+async function showUpgradePage(returnTab) {
   window._upgradeReturnTab = returnTab || 'estimate';
   switchTab('upgrade');
-  const est = _demoEstimateData;
-  const before = vizPhotoDataUrl || (est && (est.beforeImage || est.imageBase64));
-  const after = vizResultImageSrc || (est && (est.vizImage || est.vizResultImageSrc));
   const bi = document.getElementById('upgradeDemoBeforeImg');
   const ai = document.getElementById('upgradeDemoAfterImg');
-  if (bi && before) bi.src = before;
-  if (ai && after) ai.src = after;
+  if (!bi || !ai) return;
+  // Try live user images first
+  const liveAfter = window.vizResultImageSrc;
+  const liveBefore = window.vizPhotoDataUrl;
+  if (liveBefore && liveAfter) {
+    bi.src = liveBefore;
+    ai.src = liveAfter;
+    return;
+  }
+  // Try demo estimate data
+  let est = window._demoEstimateData;
+  if (!est) {
+    try {
+      const { data } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
+      est = data?.data;
+    } catch(e) { return; }
+  }
+  if (!est) return;
+  const before = est.beforeImage || est.imageBase64;
+  const after = est.vizImage || est.vizResultImageSrc;
+  if (before) bi.src = before;
+  if (after) ai.src = after;
 }
 function hideUpgradePage() {
   switchTab(window._upgradeReturnTab || 'estimate');
