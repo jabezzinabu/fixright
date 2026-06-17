@@ -65,28 +65,28 @@ async function showUpgradePage(returnTab) {
   const ai = document.getElementById('upgradeDemoAfterImg');
   if (!bi || !ai) return;
   // Try live user images first
-  const liveAfter = window.vizResultImageSrc;
   const liveBefore = window.vizPhotoDataUrl;
+  const liveAfter = window.vizResultImageSrc;
   if (liveBefore && liveAfter) {
     bi.src = liveBefore;
     ai.src = liveAfter;
     return;
   }
-  // Try demo estimate data
-  let est = window._demoEstimateData;
-  if (!est) {
-    try {
-      const { data } = await db.from('shared_estimates').select('data').eq('id', '__demo__').single();
-      est = data?.data;
-    } catch(e) { return; }
+  // Always fetch demo fresh from Supabase
+  try {
+    const { data } = await db.from('shared_estimates')
+      .select('data')
+      .eq('id', '__demo__')
+      .single();
+    const est = data?.data;
+    if (!est) return;
+    const before = est.beforeImage || est.imageBase64;
+    const after = est.vizImage || est.vizResultImageSrc;
+    if (before) bi.src = before;
+    if (after) ai.src = after;
+  } catch(e) {
+    console.error('showUpgradePage image load error:', e);
   }
-  if (!est) return;
-  const before = est.beforeImage || est.imageBase64;
-  const after = est.vizImage || est.vizResultImageSrc;
-  if (before) bi.src = before;
-  if (after) ai.src = after;
-  console.log('[Upgrade] before src:', before?.substring(0, 50));
-  console.log('[Upgrade] after src:', after?.substring(0, 50));
 }
 function hideUpgradePage() {
   switchTab(window._upgradeReturnTab || 'estimate');
