@@ -61,6 +61,13 @@ function hideResults() {
 function showUpgradePage(returnTab) {
   window._upgradeReturnTab = returnTab || 'estimate';
   switchTab('upgrade');
+  const est = _demoEstimateData;
+  const before = vizPhotoDataUrl || (est && (est.beforeImage || est.imageBase64));
+  const after = vizResultImageSrc || (est && (est.vizImage || est.vizResultImageSrc));
+  const bi = document.getElementById('upgradeDemoBeforeImg');
+  const ai = document.getElementById('upgradeDemoAfterImg');
+  if (bi && before) bi.src = before;
+  if (ai && after) ai.src = after;
 }
 function hideUpgradePage() {
   switchTab(window._upgradeReturnTab || 'estimate');
@@ -100,22 +107,34 @@ function toggleSection(id) {
   if (arrow) arrow.classList.toggle('open');
 }
 
+// Events that admin.js reads via event_type column (not aggregate counters)
+const CLICK_EVENTS = new Set(['see_sample_click', 'get_estimate_click']);
+
 async function trackEvent(eventType, params) {
   if (currentUser?.email === 'jabezzinabu@gmail.com') return;
   let tries = 0;
   while (!dbReady && tries < 20) { await new Promise(r => setTimeout(r, 250)); tries++; }
   if (!dbReady) return;
   try {
-    const today = new Date().toISOString().split('T')[0];
-    const { error } = await db.rpc('increment_stat', { p_date: today, p_column: eventType });
-    if (error) {
-      const { data: row } = await db.from('usage_stats').select('*').eq('date', today).single().catch(() => ({ data: null }));
-      if (row) {
-        await db.from('usage_stats').update({ [eventType]: (row[eventType] || 0) + 1 }).eq('date', today);
-      } else {
-        const insertData = { date: today, estimates_count: 0, signups_count: 0, visualizations_count: 0, visitors_count: 0, paid_conversions: 0 };
-        insertData[eventType] = 1;
-        await db.from('usage_stats').insert(insertData);
+    if (!currentUser) {
+      // Anonymous user — usage_stats RLS blocks inserts; use anonymous_events instead
+      await db.from('anonymous_events').insert({ event_type: eventType });
+    } else if (CLICK_EVENTS.has(eventType)) {
+      // Authenticated click event — insert event-log row matching admin.js query format
+      await db.from('usage_stats').insert({ event_type: eventType });
+    } else {
+      // Authenticated counter event — increment via RPC, fallback to manual upsert
+      const today = new Date().toISOString().split('T')[0];
+      const { error } = await db.rpc('increment_stat', { p_date: today, p_column: eventType });
+      if (error) {
+        const { data: row } = await db.from('usage_stats').select('*').eq('date', today).single().catch(() => ({ data: null }));
+        if (row) {
+          await db.from('usage_stats').update({ [eventType]: (row[eventType] || 0) + 1 }).eq('date', today);
+        } else {
+          const insertData = { date: today, estimates_count: 0, signups_count: 0, visualizations_count: 0, visitors_count: 0, paid_conversions: 0 };
+          insertData[eventType] = 1;
+          await db.from('usage_stats').insert(insertData);
+        }
       }
     }
   } catch(e) { console.warn('trackEvent failed:', eventType, e.message); }

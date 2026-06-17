@@ -936,3 +936,13 @@ textarea { min-height: 90px; }
 .pkg-price { font-family: 'DM Sans', sans-serif; font-size: 1.4rem; font-weight: 800; color: #E8481C; margin-bottom: 0.25rem; }
 .pkg-note { font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: #6b7280; }
 .upgrade-note { text-align: center; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: #9ca3af; }
+.upgrade-hero-img { margin-bottom: 1.5rem; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+.uhi-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.uhi-before, .uhi-after { position: relative; }
+.uhi-before img, .uhi-after img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: linear-gradient(135deg, #f3f4f6, #e5e7eb); min-height: 100px; }
+.uhi-label { position: absolute; top: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.5); color: white; font-size: 0.6rem; font-weight: 700; padding: 0.15rem 0.4rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; }
+.uhi-label.after { left: auto; right: 0.5rem; background: #E8481C; }
+.upgrade-value-prop { background: #1c2b3a; padding: 1rem 1.25rem; }
+.uvp-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: white; font-weight: 700; margin-bottom: 0.65rem; }
+.uvp-points { display: flex; flex-direction: column; gap: 0.35rem; }
+.uvp-points span { font-family: 'DM Sans', sans-serif; font-size: 0.78rem; color: rgba(255,255,255,0.8); font-weight: 500; }
