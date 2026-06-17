@@ -85,6 +85,8 @@ async function showUpgradePage(returnTab) {
   const after = est.vizImage || est.vizResultImageSrc;
   if (before) bi.src = before;
   if (after) ai.src = after;
+  console.log('[Upgrade] before src:', before?.substring(0, 50));
+  console.log('[Upgrade] after src:', after?.substring(0, 50));
 }
 function hideUpgradePage() {
   switchTab(window._upgradeReturnTab || 'estimate');
